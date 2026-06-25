@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .database import Base, engine
-from .routers import analytics, detection, meta, reports, structures
+from .routers import analytics, detection, imports, meta, reports, structures
 from .seed.seed import ensure_seeded
 
 # Create tables and auto-seed an empty DB so the app is demo-ready on first run.
@@ -36,6 +36,7 @@ app.include_router(analytics.router)
 app.include_router(meta.router)
 app.include_router(detection.router)
 app.include_router(reports.router)
+app.include_router(imports.router)
 
 
 @app.get("/", tags=["health"])

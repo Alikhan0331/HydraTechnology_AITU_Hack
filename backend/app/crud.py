@@ -77,7 +77,8 @@ def _resolve_type(type_value: str | None) -> tuple[str, str]:
     return type_value, "other"
 
 
-def create_structure(db: Session, data: schemas.StructureCreate):
+def create_structure(db: Session, data: schemas.StructureCreate,
+                     source: str = "manual", verification_status: str = "verified"):
     ru_name, code = _resolve_type(data.type)
 
     # model stores wear as a percent (30.0); services expect a fraction (0.30)
@@ -107,7 +108,7 @@ def create_structure(db: Session, data: schemas.StructureCreate):
         description=data.description, water_source=data.water_source,
         significance=data.significance or "local",
         capacity=data.capacity, wear_percent=data.wear_percent,
-        source="manual", verification_status="verified",
+        source=source, verification_status=verification_status,
     )
     db.add(obj)
     db.commit()

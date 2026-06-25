@@ -16,6 +16,7 @@ python-dotenv>=1.0
 httpx>=0.28
 openpyxl>=3.1
 fpdf2>=2.8
+python-multipart>=0.0.9
 
 # --- Optional (PostgreSQL in production / docker-compose) ---
 # psycopg[binary]>=3.2   (installed inside the Docker image automatically)
