@@ -6,7 +6,7 @@ extra technical fields are non-breaking.
 """
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 # --------------------------------------------------------------------------- #
@@ -146,6 +146,11 @@ class RiskAssessmentRead(BaseModel):
     recommendation: str | None = None
     computed_at: datetime | None = None
     next_inspection: date | None = None
+
+    @computed_field  # alias so the frontend can read either `score` or `risk_score`
+    @property
+    def risk_score(self) -> float:
+        return self.score
 
 
 # --------------------------------------------------------------------------- #
