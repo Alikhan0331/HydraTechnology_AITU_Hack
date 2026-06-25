@@ -91,7 +91,12 @@ def _rows_from_xlsx(content: bytes) -> list[list]:
 
 
 def _rows_from_xls(content: bytes) -> list[list]:
-    """Legacy .xls (e.g. the original датасет.xls)."""
+    """Legacy .xls (e.g. the original датасет.xls).
+    Auto-detects xlsx disguised as .xls by checking ZIP magic bytes (PK header).
+    """
+    # xlsx files are ZIP archives and start with PK\x03\x04
+    if content[:4] == b'PK\x03\x04':
+        return _rows_from_xlsx(content)
     import xlrd
 
     book = xlrd.open_workbook(file_contents=content)
