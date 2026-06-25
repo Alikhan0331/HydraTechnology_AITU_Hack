@@ -7,8 +7,8 @@ import {
   deleteStructure,
   addInspection,
   getForecast,
-  ForecastData,
 } from "../api/structures";
+import type { ForecastData } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
 
 const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
@@ -140,10 +140,8 @@ function PredictiveBlock({ structureId }: { structureId: number }) {
 
   return (
     <div style={{ background: "white", borderRadius: "var(--radius-xl)", padding: "24px", border: "1px solid #e0e7ff", boxShadow: "0 2px 16px rgba(99,102,241,0.08)", position: "relative", overflow: "hidden" }}>
-      {/* Purple gradient accent */}
       <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.12), transparent 70%)", pointerEvents: "none" }} />
 
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
@@ -152,29 +150,22 @@ function PredictiveBlock({ structureId }: { structureId: number }) {
           </div>
           <p style={{ margin: 0, fontSize: "12px", color: "#6366f1", fontWeight: 500 }}>{data.methodology}</p>
         </div>
-        <span style={{
-          background: recColor + "18", color: recColor, border: `1px solid ${recColor}30`,
-          padding: "6px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, whiteSpace: "nowrap"
-        }}>
+        <span style={{ background: recColor + "18", color: recColor, border: `1px solid ${recColor}30`, padding: "6px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, whiteSpace: "nowrap" }}>
           {data.recommendation}
         </span>
       </div>
 
-      {/* Main metrics row */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "20px" }}>
-        {/* Current */}
         <div style={{ background: "#f8fafc", borderRadius: "14px", padding: "16px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: "4px" }}>
           <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px" }}>Текущий риск</span>
           <span style={{ fontSize: "32px", fontWeight: 900, color: riskLevelColor[data.current_level] || "#64748b", lineHeight: 1 }}>{data.current_risk}</span>
           <span style={{ fontSize: "11px", color: riskLevelColor[data.current_level], fontWeight: 700 }}>{riskLevelLabel[data.current_level] || data.current_level}</span>
         </div>
-        {/* Probability critical */}
         <div style={{ background: recColor + "08", borderRadius: "14px", padding: "16px", border: `1px solid ${recColor}22`, display: "flex", flexDirection: "column", gap: "4px" }}>
           <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px" }}>Вероятность критич.</span>
           <span style={{ fontSize: "32px", fontWeight: 900, color: recColor, lineHeight: 1 }}>{Math.round(data.prob_critical * 100)}%</span>
           <span style={{ fontSize: "11px", color: recColor, fontWeight: 700 }}>за 24 месяца</span>
         </div>
-        {/* Residual life */}
         <div style={{ background: "#f0fdf4", borderRadius: "14px", padding: "16px", border: "1px solid #bbf7d0", display: "flex", flexDirection: "column", gap: "4px" }}>
           <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px" }}>Остаточный ресурс</span>
           <span style={{ fontSize: "32px", fontWeight: 900, color: data.residual_life_years < 5 ? "#dc2626" : data.residual_life_years < 15 ? "#d97706" : "#16a34a", lineHeight: 1 }}>{data.residual_life_years}</span>
@@ -182,7 +173,6 @@ function PredictiveBlock({ structureId }: { structureId: number }) {
         </div>
       </div>
 
-      {/* Forecast timeline */}
       <div style={{ marginBottom: "16px" }}>
         <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px", marginBottom: "10px" }}>Прогноз деградации</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
@@ -206,7 +196,6 @@ function PredictiveBlock({ structureId }: { structureId: number }) {
         </div>
       </div>
 
-      {/* Sparkline chart */}
       <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "14px 16px", border: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px", marginBottom: "8px" }}>Траектория риска: сейчас → +6м → +12м → +24м</div>
         <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ display: "block", overflow: "visible" }}>
