@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getStructures, getMeta } from "../api/structures";
+import { getStructures, getMeta, deleteStructure } from "../api/structures";
 import type { Structure } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
 
@@ -18,16 +18,10 @@ const MOCK: Structure[] = [
 const PAGE_SIZE = 10;
 
 const RISK_COLORS: Record<string, string> = {
-  low: "#16a34a",
-  medium: "#d97706",
-  high: "#ea580c",
-  critical: "#dc2626",
+  low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626",
 };
 const RISK_LABELS: Record<string, string> = {
-  low: "Низкий",
-  medium: "Средний",
-  high: "Высокий",
-  critical: "Критический",
+  low: "Низкий", medium: "Средний", high: "Высокий", critical: "Критический",
 };
 
 function normalizeStringList(data: any[]): string[] {
@@ -37,7 +31,6 @@ function normalizeStringList(data: any[]): string[] {
   });
 }
 
-/** Smart pagination: always show first, last, current ±2, with ellipsis */
 function buildPages(current: number, total: number): (number | "…")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const pages: (number | "…")[] = [];
@@ -59,18 +52,35 @@ export default function Catalog() {
   const [sortBy, setSortBy] = useState<"id" | "name" | "risk" | "year">("id");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const navigate = useNavigate();
 
   const conditions = ["Все", "good", "monitoring", "requires_repair", "emergency"];
 
-  useEffect(() => {
+  const reload = () => {
     getStructures().then((res) => { if (res.data?.length) setStructures(res.data); }).catch(() => {});
+  };
+
+  useEffect(() => {
+    reload();
     getMeta("types").then((res) => {
-      if (Array.isArray(res.data) && res.data.length) {
-        setTypes(["Все", ...normalizeStringList(res.data)]);
-      }
+      if (Array.isArray(res.data) && res.data.length) setTypes(["Все", ...normalizeStringList(res.data)]);
     }).catch(() => {});
   }, []);
+
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (!window.confirm("Удалить объект? Это действие нельзя отменить.")) return;
+    setDeletingId(id);
+    try {
+      await deleteStructure(id);
+      setStructures(s => s.filter(x => x.id !== id));
+    } catch {
+      alert("Ошибка при удалении");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filtered = structures
     .filter((s) => {
@@ -130,14 +140,28 @@ export default function Catalog() {
           <h1 style={{ fontSize: "24px", color: "var(--gray-900)", marginBottom: "4px" }}>Каталог объектов</h1>
           <p style={{ color: "var(--gray-500)", fontSize: "13px" }}>Цифровой реестр гидротехнических сооружений</p>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {/* ✅ КНОПКА СОЗДАНИЯ */}
+          <button
+            onClick={() => navigate("/create")}
+            style={{
+              padding: "9px 18px", borderRadius: "var(--radius-sm)", border: "none",
+              background: "#1d4ed8", color: "white", fontWeight: 700, fontSize: "13px",
+              cursor: "pointer", boxShadow: "var(--shadow-sm)", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap",
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#1e40af"}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "#1d4ed8"}
+          >
+            + Добавить объект
+          </button>
+          <div style={{ width: 1, height: 32, background: "var(--gray-200)", alignSelf: "center" }} />
           {[
             { fmt: "csv", label: "CSV", color: "#16a34a" },
             { fmt: "xlsx", label: "Excel", color: "#1d4ed8" },
             { fmt: "pdf", label: "PDF", color: "#dc2626" },
           ].map(({ fmt, label, color }) => (
             <button key={fmt} onClick={() => handleExport(fmt)}
-              style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: `1px solid ${color}40`, background: color + "0a", color, fontWeight: 700, fontSize: "12px", cursor: "pointer", boxShadow: "var(--shadow-sm)", whiteSpace: "nowrap" }}
+              style={{ padding: "8px 14px", borderRadius: "var(--radius-sm)", border: `1px solid ${color}40`, background: color + "0a", color, fontWeight: 700, fontSize: "12px", cursor: "pointer", boxShadow: "var(--shadow-sm)", whiteSpace: "nowrap" }}
               onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = color + "18"}
               onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = color + "0a"}
             >↓ {label}</button>
@@ -163,10 +187,10 @@ export default function Catalog() {
         </div>
       </div>
 
-      {/* Table with horizontal scroll on small screens */}
+      {/* Table */}
       <div style={{ background: "white", borderRadius: "var(--radius-lg)", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
         <div style={{ overflowX: "auto", width: "100%" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "640px" }}>
             <thead>
               <tr style={{ background: "var(--gray-50)", borderBottom: "2px solid var(--gray-200)" }}>
                 <th style={thStyle("name")} onClick={() => handleSort("name")}>Название <SortArrow col="name" /></th>
@@ -174,7 +198,7 @@ export default function Catalog() {
                 <th style={{ ...thStyle("id"), cursor: "default" }}>Район</th>
                 <th style={{ ...thStyle("id"), cursor: "default" }}>Состояние</th>
                 <th style={thStyle("risk")} onClick={() => handleSort("risk")}>Риск <SortArrow col="risk" /></th>
-                <th style={{ ...thStyle("id"), cursor: "default", width: "80px" }}></th>
+                <th style={{ ...thStyle("id"), cursor: "default", width: "130px", textAlign: "right" }}>Действия</th>
               </tr>
             </thead>
             <tbody>
@@ -184,7 +208,7 @@ export default function Catalog() {
                   onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "var(--gray-50)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "white"; }}
                   onClick={() => navigate(`/object/${s.id}`)}>
-                  <td style={{ padding: "13px 16px", fontWeight: 600, color: "var(--gray-800)", maxWidth: "240px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</td>
+                  <td style={{ padding: "13px 16px", fontWeight: 600, color: "var(--gray-800)", maxWidth: "220px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</td>
                   <td style={{ padding: "13px 16px", whiteSpace: "nowrap" }}>
                     <span style={{ background: "var(--gray-100)", color: "var(--gray-600)", padding: "3px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 500 }}>{s.type}</span>
                   </td>
@@ -199,8 +223,21 @@ export default function Catalog() {
                       {RISK_LABELS[s.risk_level] ?? s.risk_level}
                     </span>
                   </td>
-                  <td style={{ padding: "13px 16px", textAlign: "right" }}>
-                    <span style={{ color: "var(--primary-light)", fontSize: "13px", fontWeight: 500, whiteSpace: "nowrap" }}>Открыть →</span>
+                  {/* ✅ КНОПКИ ДЕЙСТВИЙ В СТРОКЕ */}
+                  <td style={{ padding: "10px 14px", textAlign: "right" }}>
+                    <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }} onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/edit/${s.id}`); }}
+                        title="Редактировать"
+                        style={{ padding: "5px 10px", borderRadius: "6px", border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}
+                      >✏️</button>
+                      <button
+                        onClick={(e) => handleDelete(e, s.id)}
+                        disabled={deletingId === s.id}
+                        title="Удалить"
+                        style={{ padding: "5px 10px", borderRadius: "6px", border: "1px solid #fecaca", background: deletingId === s.id ? "#fee2e2" : "#fff5f5", color: "#dc2626", cursor: deletingId === s.id ? "default" : "pointer", fontSize: "13px", fontWeight: 600 }}
+                      >{deletingId === s.id ? "⏳" : "🗑️"}</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -216,7 +253,7 @@ export default function Catalog() {
         )}
       </div>
 
-      {/* Footer: count + smart pagination */}
+      {/* Footer pagination */}
       {totalPages > 1 && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", flexWrap: "wrap", gap: "10px" }}>
           <span style={{ color: "var(--gray-400)", fontSize: "13px" }}>
@@ -224,21 +261,15 @@ export default function Catalog() {
           </span>
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              style={{ padding: "7px 13px", borderRadius: "var(--radius-sm)", border: "1px solid var(--gray-200)", background: "white", color: page === 1 ? "var(--gray-300)" : "var(--gray-700)", cursor: page === 1 ? "default" : "pointer", fontSize: "13px" }}>
-              ←
-            </button>
+              style={{ padding: "7px 13px", borderRadius: "var(--radius-sm)", border: "1px solid var(--gray-200)", background: "white", color: page === 1 ? "var(--gray-300)" : "var(--gray-700)", cursor: page === 1 ? "default" : "pointer", fontSize: "13px" }}>←</button>
             {pages.map((p, i) =>
               p === "…"
-                ? <span key={`ellipsis-${i}`} style={{ padding: "7px 4px", fontSize: "13px", color: "var(--gray-400)", alignSelf: "center" }}>…</span>
+                ? <span key={`el-${i}`} style={{ padding: "7px 4px", fontSize: "13px", color: "var(--gray-400)", alignSelf: "center" }}>…</span>
                 : <button key={p} onClick={() => setPage(p as number)}
-                    style={{ padding: "7px 12px", borderRadius: "var(--radius-sm)", border: page === p ? "1px solid var(--primary)" : "1px solid var(--gray-200)", background: page === p ? "var(--primary)" : "white", color: page === p ? "white" : "var(--gray-700)", cursor: "pointer", fontWeight: page === p ? 700 : 400, fontSize: "13px", minWidth: "36px" }}>
-                    {p}
-                  </button>
+                    style={{ padding: "7px 12px", borderRadius: "var(--radius-sm)", border: page === p ? "1px solid var(--primary)" : "1px solid var(--gray-200)", background: page === p ? "var(--primary)" : "white", color: page === p ? "white" : "var(--gray-700)", cursor: "pointer", fontWeight: page === p ? 700 : 400, fontSize: "13px", minWidth: "36px" }}>{p}</button>
             )}
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              style={{ padding: "7px 13px", borderRadius: "var(--radius-sm)", border: "1px solid var(--gray-200)", background: "white", color: page === totalPages ? "var(--gray-300)" : "var(--gray-700)", cursor: page === totalPages ? "default" : "pointer", fontSize: "13px" }}>
-              →
-            </button>
+              style={{ padding: "7px 13px", borderRadius: "var(--radius-sm)", border: "1px solid var(--gray-200)", background: "white", color: page === totalPages ? "var(--gray-300)" : "var(--gray-700)", cursor: page === totalPages ? "default" : "pointer", fontSize: "13px" }}>→</button>
           </div>
         </div>
       )}
