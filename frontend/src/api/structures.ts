@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE = "http://localhost:8000/api";
+const BASE = ((import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000") + "/api";
 
 export interface Structure {
   id: number;
@@ -19,6 +19,15 @@ export const getStructures = (params?: Record<string, string>) =>
 export const getStructure = (id: number) =>
   axios.get(`${BASE}/structures/${id}`);
 
+export const createStructure = (data: Record<string, any>) =>
+  axios.post(`${BASE}/structures`, data);
+
+export const updateStructure = (id: number, data: Record<string, any>) =>
+  axios.put(`${BASE}/structures/${id}`, data);
+
+export const deleteStructure = (id: number) =>
+  axios.delete(`${BASE}/structures/${id}`);
+
 export const getMapData = () =>
   axios.get(`${BASE}/structures/map`);
 
@@ -34,8 +43,8 @@ export const getAnalyticsCharts = () =>
 export const getAnalyticsDynamics = () =>
   axios.get(`${BASE}/analytics/dynamics`);
 
-export const getTopRisk = () =>
-  axios.get(`${BASE}/analytics/top-risk`);
+export const getTopRisk = (limit = 10) =>
+  axios.get(`${BASE}/analytics/top-risk`, { params: { limit } });
 
 export const getStructureRisk = (id: number) =>
   axios.get(`${BASE}/structures/${id}/risk`);

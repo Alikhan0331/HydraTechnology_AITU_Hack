@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getStructure, getStructureRisk } from "../api/structures";
+import { getStructure, getStructureRisk, deleteStructure } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
+
+const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
 
 interface Inspection { date: string; inspector: string; result: string; condition: string; }
 
@@ -35,12 +37,10 @@ const statusColors: Record<string, string> = {
   "Критическое состояние": "#dc2626",
 };
 
-// Нормализует ответ риска: если factors не массив — берём fallback
 function normalizeRisk(data: any) {
   if (!data) return MOCK_RISK;
   let factors = data.factors;
   if (!Array.isArray(factors)) {
-    // если объект — превращаем в массив, если null/undefined — пустой массив
     factors = factors && typeof factors === "object"
       ? Object.entries(factors).map(([name, val]: any) => ({ name, value: val?.value ?? val, weight: val?.weight ?? 0, score: val?.score ?? 0 }))
       : MOCK_RISK.factors;
@@ -53,6 +53,8 @@ export default function ObjectDetails() {
   const navigate = useNavigate();
   const [obj, setObj] = useState<any>(MOCK);
   const [risk, setRisk] = useState<any>(MOCK_RISK);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -61,16 +63,76 @@ export default function ObjectDetails() {
     }
   }, [id]);
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteStructure(Number(id));
+      navigate("/catalog");
+    } catch {
+      alert("Ошибка при удалении");
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   const recColor = statusColors[risk?.recommendation] || "#d97706";
 
   return (
     <div style={{ padding: "32px", background: "var(--gray-50)", minHeight: "100vh" }}>
-      <button onClick={() => navigate(-1)} style={{ marginBottom: "24px", background: "white", border: "1px solid var(--gray-200)", padding: "8px 16px", borderRadius: "var(--radius-sm)", cursor: "pointer", color: "var(--gray-600)", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px", boxShadow: "var(--shadow-sm)", fontWeight: 500 }}>← Назад</button>
+
+      {/* Delete confirmation modal */}
+      {showDeleteModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "white", borderRadius: "12px", padding: "32px", maxWidth: "400px", width: "90%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ fontSize: "44px", marginBottom: "12px" }}>⚠️</div>
+            <div style={{ fontWeight: 800, fontSize: "18px", color: "#1e293b", marginBottom: "8px" }}>Удалить объект?</div>
+            <div style={{ color: "#64748b", fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>
+              «{obj.name}» будет удалён безвозвратно вместе со всей историей осмотров.
+            </div>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <button onClick={() => setShowDeleteModal(false)} disabled={deleting}
+                style={{ padding: "10px 24px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "white", color: "#475569", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}>
+                Отмена
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                style={{ padding: "10px 24px", borderRadius: "8px", border: "none", background: deleting ? "#fca5a5" : "#dc2626", color: "white", fontWeight: 700, fontSize: "14px", cursor: deleting ? "default" : "pointer" }}>
+                {deleting ? "⏳ Удаление..." : "Да, удалить"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top nav */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "10px" }}>
+        <button onClick={() => navigate(-1)}
+          style={{ background: "white", border: "1px solid var(--gray-200)", padding: "8px 16px", borderRadius: "var(--radius-sm)", cursor: "pointer", color: "var(--gray-600)", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px", boxShadow: "var(--shadow-sm)", fontWeight: 500 }}>
+          ← Назад
+        </button>
+        {/* ✅ КНОПКИ РЕДАКТИРОВАТЬ / УДАЛИТЬ */}
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            onClick={() => navigate(`/edit/${id}`)}
+            style={{ padding: "8px 18px", borderRadius: "var(--radius-sm)", border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#dbeafe"}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "#eff6ff"}
+          >
+            ✏️ Редактировать
+          </button>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            style={{ padding: "8px 18px", borderRadius: "var(--radius-sm)", border: "1px solid #fecaca", background: "#fff5f5", color: "#dc2626", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5"}
+          >
+            🗑️ Удалить
+          </button>
+        </div>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "20px" }}>
         {/* Main */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Header card */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "28px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
               <div>
@@ -89,7 +151,7 @@ export default function ObjectDetails() {
                 { label: "🌐 Координаты", value: `${obj.latitude}, ${obj.longitude}` },
                 { label: "📏 Длина (км)", value: obj.length_km ?? "—" },
                 { label: "🏗️ Год постройки", value: obj.year_built ?? "—" },
-                { label: "🔍 Последний осмотр", value: obj.last_inspection ?? "—" },
+                { label: "🔍 Посл. осмотр", value: obj.last_inspection ?? "—" },
                 { label: "⚠️ Уровень риска", value: obj.risk_level },
               ].map((item) => (
                 <div key={item.label} style={{ background: "var(--gray-50)", borderRadius: "var(--radius-sm)", padding: "14px", border: "1px solid var(--gray-200)" }}>
@@ -100,7 +162,6 @@ export default function ObjectDetails() {
             </div>
           </div>
 
-          {/* Risk & Inspection model */}
           {risk && (
             <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
               <h3 style={{ fontSize: "15px", color: "var(--gray-900)", margin: "0 0 16px" }}>🛡️ Модель риска и осмотра</h3>
@@ -147,7 +208,7 @@ export default function ObjectDetails() {
                 { fmt: "pdf", label: "Скачать PDF", icon: "📃", color: "#dc2626" },
               ].map(({ fmt, label, icon, color }) => (
                 <a key={fmt}
-                  href={`http://localhost:8000/api/reports/structures.${fmt}?id=${id}`}
+                  href={`${BASE_URL}/api/reports/structures.${fmt}?id=${id}`}
                   target="_blank" rel="noopener noreferrer"
                   style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "var(--radius-sm)", border: `1px solid ${color}30`, background: color + "08", color, fontWeight: 600, fontSize: "13px", textDecoration: "none" }}
                   onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.background = color + "18"}
