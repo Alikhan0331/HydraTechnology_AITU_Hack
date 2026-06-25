@@ -1,0 +1,17 @@
+# HydraTechnology backend — core runtime deps
+# Unpinned lower bounds so pip resolves versions with prebuilt wheels
+# for the local interpreter (incl. Python 3.14).
+fastapi>=0.115
+uvicorn[standard]>=0.34
+SQLAlchemy>=2.0
+pydantic>=2.11
+pydantic-settings>=2.7
+python-dotenv>=1.0
+httpx>=0.28
+
+# --- Optional (PostgreSQL in production / docker-compose) ---
+# psycopg[binary]>=3.2
+#
+# Default DB is SQLite (zero-setup, works everywhere for the demo).
+# To use PostgreSQL: install psycopg above and set DATABASE_URL in .env, e.g.
+#   DATABASE_URL=postgresql+psycopg://hydra:hydra@localhost:5432/hydra
