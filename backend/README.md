@@ -14,7 +14,7 @@
 cd backend
 python3 -m venv venv
 source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+pip install --only-binary=:all: -r requirements.txt   # wheels only (no Rust build)
 
 python -m app.seed.seed --reset   # наполнить БД (≈540 объектов)
 uvicorn app.main:app --reload --port 8000
