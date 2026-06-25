@@ -10,6 +10,7 @@ import {
 } from "../api/structures";
 import type { ForecastData } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
+import OperationHistory from "../components/OperationHistory";
 
 const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
 
@@ -605,6 +606,7 @@ export default function ObjectDetails() {
               ))}
             </div>
           </div>
+          <OperationHistory structureId={Number(id)} />
         </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes fadeIn { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:scale(1); } }`}</style>
