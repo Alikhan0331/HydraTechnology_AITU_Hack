@@ -22,48 +22,54 @@ export default function MapPage() {
   }, []);
 
   return (
-    <div style={{ height: "calc(100vh - 60px)", display: "flex", flexDirection: "column" }}>
-      <div style={{ padding: "12px 24px", background: "white", borderBottom: "1px solid #e2e8f0", display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        {Object.entries(conditionColor).map(([key, color]) => (
-          <div key={key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <div style={{ width: 14, height: 14, borderRadius: "50%", background: color }} />
-            <span style={{ fontSize: "13px", color: "#374151" }}>{conditionLabel[key]}</span>
-          </div>
-        ))}
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0f172a" }}>
+      {/* Header */}
+      <div style={{ padding: "20px 32px", background: "#0f172a", borderBottom: "1px solid #1e293b" }}>
+        <h1 style={{ color: "white", fontSize: "20px", fontWeight: 700, margin: "0 0 12px" }}>🗺️ Карта объектов</h1>
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+          {Object.entries(conditionColor).map(([key, color]) => (
+            <div key={key} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: 12, height: 12, borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}` }} />
+              <span style={{ fontSize: "13px", color: "#94a3b8" }}>{conditionLabel[key]}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      <MapContainer center={[42.85, 71.37]} zoom={9} style={{ flex: 1 }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
-        />
-        {structures.map((s) => (
-          <CircleMarker
-            key={s.id}
-            center={[s.latitude, s.longitude]}
-            radius={12}
-            fillColor={conditionColor[s.condition]}
-            color="white"
-            weight={2}
-            fillOpacity={0.85}
-          >
-            <Popup>
-              <div style={{ minWidth: "160px" }}>
-                <strong>{s.name}</strong><br />
-                <span style={{ color: "#6b7280", fontSize: "13px" }}>{s.type} · {s.district}</span><br />
-                <span style={{ color: conditionColor[s.condition], fontWeight: 600 }}>
-                  {conditionLabel[s.condition]}
-                </span><br />
-                <button
-                  onClick={() => navigate(`/object/${s.id}`)}
-                  style={{ marginTop: "8px", background: "#1e40af", color: "white", border: "none", padding: "4px 10px", borderRadius: "6px", cursor: "pointer", fontSize: "12px" }}
-                >
-                  Подробнее →
-                </button>
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
-      </MapContainer>
+      <div style={{ flex: 1, borderRadius: "0", overflow: "hidden" }}>
+        <MapContainer center={[42.85, 71.37]} zoom={9} style={{ height: "100%", width: "100%" }}>
+          <TileLayer
+            url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+            attribution='&copy; Stadia Maps'
+          />
+          {structures.map((s) => (
+            <CircleMarker
+              key={s.id}
+              center={[s.latitude, s.longitude]}
+              radius={14}
+              fillColor={conditionColor[s.condition]}
+              color={conditionColor[s.condition]}
+              weight={2}
+              fillOpacity={0.9}
+            >
+              <Popup>
+                <div style={{ minWidth: "160px", fontFamily: "sans-serif" }}>
+                  <strong style={{ fontSize: "14px" }}>{s.name}</strong><br />
+                  <span style={{ color: "#6b7280", fontSize: "12px" }}>{s.type} · {s.district}</span><br />
+                  <span style={{ color: conditionColor[s.condition], fontWeight: 600, fontSize: "12px" }}>
+                    {conditionLabel[s.condition]}
+                  </span><br />
+                  <button
+                    onClick={() => navigate(`/object/${s.id}`)}
+                    style={{ marginTop: "8px", background: "#1d4ed8", color: "white", border: "none", padding: "5px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "12px" }}
+                  >
+                    Подробнее →
+                  </button>
+                </div>
+              </Popup>
+            </CircleMarker>
+          ))}
+        </MapContainer>
+      </div>
     </div>
   );
 }

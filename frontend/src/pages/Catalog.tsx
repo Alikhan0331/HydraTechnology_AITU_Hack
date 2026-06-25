@@ -33,66 +33,84 @@ export default function Catalog() {
     return matchSearch && matchType && matchCond;
   });
 
+  const inputStyle = {
+    padding: "10px 14px", borderRadius: "10px",
+    border: "1px solid #1e293b", background: "#1e293b",
+    color: "white", fontSize: "14px", outline: "none",
+  };
+
   return (
-    <div style={{ padding: "32px", background: "#f1f5f9", minHeight: "100vh" }}>
-      <h1 style={{ marginBottom: "24px", color: "#1e293b" }}>📋 Каталог объектов</h1>
-      <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
+    <div style={{ padding: "32px", minHeight: "100vh", background: "#0f172a" }}>
+      <div style={{ marginBottom: "28px" }}>
+        <h1 style={{ color: "white", fontSize: "26px", fontWeight: 800, margin: 0 }}>Каталог</h1>
+        <p style={{ color: "#64748b", margin: "6px 0 0", fontSize: "14px" }}>Цифровой каталог гидротехнических сооружений</p>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap" }}>
         <input
-          placeholder="Поиск по названию или району..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", minWidth: "280px" }}
+          placeholder="🔍 Поиск по названию или району..."
+          value={search} onChange={(e) => setSearch(e.target.value)}
+          style={{ ...inputStyle, minWidth: "280px" }}
         />
-        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
-          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}>
-          {types.map((t) => <option key={t}>{t}</option>)}
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={inputStyle}>
+          {types.map((t) => <option key={t} style={{ background: "#1e293b" }}>{t}</option>)}
         </select>
-        <select value={condFilter} onChange={(e) => setCondFilter(e.target.value)}
-          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}>
+        <select value={condFilter} onChange={(e) => setCondFilter(e.target.value)} style={inputStyle}>
           {conditions.map((c) => (
-            <option key={c} value={c}>{c === "Все" ? "Все состояния" : conditionLabel[c]}</option>
+            <option key={c} value={c} style={{ background: "#1e293b" }}>
+              {c === "Все" ? "Все состояния" : conditionLabel[c]}
+            </option>
           ))}
         </select>
+        <div style={{ display: "flex", alignItems: "center", color: "#64748b", fontSize: "13px" }}>
+          {filtered.length} объектов
+        </div>
       </div>
-      <div style={{ background: "white", borderRadius: "12px", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+
+      {/* Table */}
+      <div style={{ background: "#1e293b", borderRadius: "16px", overflow: "hidden", border: "1px solid #334155" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead style={{ background: "#1e40af", color: "white" }}>
-            <tr>
-              {["Название", "Тип", "Район", "Состояние", "Риск", "Действие"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left" }}>{h}</th>
+          <thead>
+            <tr style={{ background: "#0f172a" }}>
+              {["Название", "Тип", "Район", "Состояние", "Риск", ""].map((h) => (
+                <th key={h} style={{ padding: "14px 16px", textAlign: "left", color: "#64748b", fontSize: "12px", fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.map((s, i) => (
-              <tr key={s.id} style={{ background: i % 2 === 0 ? "white" : "#f8fafc" }}>
-                <td style={{ padding: "12px 16px", fontWeight: 500 }}>{s.name}</td>
-                <td style={{ padding: "12px 16px" }}>{s.type}</td>
-                <td style={{ padding: "12px 16px" }}>{s.district}</td>
-                <td style={{ padding: "12px 16px" }}>
+              <tr key={s.id}
+                style={{ borderTop: "1px solid #334155", transition: "background 0.15s", cursor: "pointer" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#263347")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                onClick={() => navigate(`/object/${s.id}`)}
+              >
+                <td style={{ padding: "14px 16px", color: "white", fontWeight: 500 }}>{s.name}</td>
+                <td style={{ padding: "14px 16px" }}>
+                  <span style={{ background: "#0f172a", color: "#94a3b8", padding: "3px 10px", borderRadius: "6px", fontSize: "13px" }}>{s.type}</span>
+                </td>
+                <td style={{ padding: "14px 16px", color: "#94a3b8", fontSize: "14px" }}>{s.district}</td>
+                <td style={{ padding: "14px 16px" }}>
                   <span style={{
                     background: conditionColor[s.condition] + "22",
                     color: conditionColor[s.condition],
-                    padding: "4px 10px", borderRadius: "20px", fontWeight: 600, fontSize: "13px"
+                    padding: "4px 12px", borderRadius: "20px", fontWeight: 600, fontSize: "12px",
+                    border: `1px solid ${conditionColor[s.condition]}44`
                   }}>
                     {conditionLabel[s.condition]}
                   </span>
                 </td>
-                <td style={{ padding: "12px 16px", color: "#6b7280" }}>{s.risk_level}</td>
-                <td style={{ padding: "12px 16px" }}>
-                  <button
-                    onClick={() => navigate(`/object/${s.id}`)}
-                    style={{ background: "#1e40af", color: "white", border: "none", padding: "6px 14px", borderRadius: "6px", cursor: "pointer" }}
-                  >
-                    Подробнее
-                  </button>
+                <td style={{ padding: "14px 16px", color: "#64748b", fontSize: "13px" }}>{s.risk_level}</td>
+                <td style={{ padding: "14px 16px" }}>
+                  <span style={{ color: "#3b82f6", fontSize: "13px" }}>Подробнее →</span>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <div style={{ padding: "32px", textAlign: "center", color: "#6b7280" }}>Объекты не найдены</div>
+          <div style={{ padding: "48px", textAlign: "center", color: "#475569" }}>Объекты не найдены</div>
         )}
       </div>
     </div>
