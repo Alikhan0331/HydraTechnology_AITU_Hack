@@ -70,9 +70,10 @@ docker compose up --build
 | GET | `/api/analytics/dashboard` | Всё для главного экрана одним запросом (KPI + распределения + динамика + recently_added + top_risk) |
 | GET | `/api/analytics/charts` | Данные для графиков (по типам/районам/декадам/риску) |
 | GET | `/api/analytics/dynamics?months=12` | Динамика состояния по месяцам (линейный график) |
-| GET | `/api/analytics/top-risk?limit=10` | Топ проблемных объектов (диспетчер) |
+| GET | `/api/analytics/top-risk?limit=10` | **Топ рисковых объектов** (экспертная risk-модель + `risk_reasons`) |
 | GET | `/api/analytics/priority-ranking?limit=50` | **Рейтинг по приоритету осмотра** (экспертная модель) |
 | GET | `/api/structures/{id}/priority` | Priority Score объекта + breakdown (для карточки) |
+| GET | `/api/structures/{id}/risk-score` | Risk Score объекта + причины риска + цвет (для карточки) |
 
 ### Отчёты / Экспорт (ТЗ: отчётность)
 | Метод | Путь | Формат |

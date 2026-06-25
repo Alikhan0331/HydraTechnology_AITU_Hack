@@ -186,6 +186,27 @@ class PriorityDetail(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+#  Top-risk objects (expert risk model)
+# --------------------------------------------------------------------------- #
+class TopRiskItem(BaseModel):
+    id: int
+    name: str
+    type: str
+    district: str
+    risk_score: int
+    risk_level: str
+    risk_reasons: list[str]
+
+
+class RiskScoreDetail(BaseModel):
+    risk_score: int
+    risk_level: str
+    risk_reasons: list[str]
+    color: str
+    breakdown: dict[str, int]
+
+
+# --------------------------------------------------------------------------- #
 #  Risk
 # --------------------------------------------------------------------------- #
 class RiskAssessmentRead(BaseModel):

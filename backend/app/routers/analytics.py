@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..database import get_db
 from ..enums import CONDITIONS, ConditionCode, RISK_LABELS
-from ..services import priority
+from ..services import priority, risk_score
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
@@ -88,11 +88,24 @@ def charts(db: Session = Depends(get_db)):
     }
 
 
-@router.get("/top-risk", response_model=list[schemas.StructureRead])
+@router.get("/top-risk", response_model=list[schemas.TopRiskItem])
 def top_risk(limit: int = 10, db: Session = Depends(get_db)):
-    """Most problematic objects first — 'intelligent dispatcher' priority list."""
-    stmt = select(S).order_by(S.risk_score.desc().nullslast()).limit(limit)
-    return list(db.scalars(stmt))
+    """Top risk objects by the deterministic expert Risk Score model, with the
+    human-readable reasons. Sorted by risk_score desc."""
+    acc = accident_counts(db)
+    items = []
+    for s in db.scalars(select(S)):
+        r = risk_score.compute_risk_score(
+            condition=s.condition, year_built=s.year_built,
+            last_inspection=s.last_inspection, accident_count=acc.get(s.id, 0),
+        )
+        items.append(schemas.TopRiskItem(
+            id=s.id, name=s.name, type=s.type, district=s.district,
+            risk_score=r["risk_score"], risk_level=r["risk_level"],
+            risk_reasons=r["risk_reasons"],
+        ))
+    items.sort(key=lambda x: x.risk_score, reverse=True)
+    return items[:limit]
 
 
 def _months_back(n: int = 12) -> list[str]:

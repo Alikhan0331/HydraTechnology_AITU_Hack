@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from .. import crud, models, schemas
 from ..database import get_db
-from ..services import priority, risk_engine
+from ..services import priority, risk_engine, risk_score
 
 router = APIRouter(prefix="/api/structures", tags=["structures"])
 
@@ -118,13 +118,10 @@ def recompute_risk(structure_id: int, db: Session = Depends(get_db)):
     )
 
 
-# --- Inspection Priority (deterministic expert model) -------------------------
-@router.get("/{structure_id}/priority", response_model=schemas.PriorityDetail)
-def get_priority(structure_id: int, db: Session = Depends(get_db)):
-    obj = crud.get_structure(db, structure_id)
-    if not obj:
-        raise HTTPException(404, "Structure not found")
-    accidents = (db.scalar(
+# --- Inspection Priority + Risk Score (deterministic expert models) -----------
+def _accident_count(db: Session, structure_id: int) -> int:
+    """Accidents = emergency inspections + emergency repairs of the object."""
+    return (db.scalar(
         select(func.count()).select_from(models.Inspection).where(
             models.Inspection.structure_id == structure_id,
             models.Inspection.inspection_type == "Аварийный")
@@ -133,15 +130,38 @@ def get_priority(structure_id: int, db: Session = Depends(get_db)):
             models.Repair.structure_id == structure_id,
             models.Repair.repair_type == "Аварийный ремонт")
     ) or 0)
+
+
+@router.get("/{structure_id}/priority", response_model=schemas.PriorityDetail)
+def get_priority(structure_id: int, db: Session = Depends(get_db)):
+    obj = crud.get_structure(db, structure_id)
+    if not obj:
+        raise HTTPException(404, "Structure not found")
     p = priority.compute_priority(
         condition=obj.condition, year_built=obj.year_built,
         last_inspection=obj.last_inspection, significance=obj.significance,
-        accident_count=accidents,
+        accident_count=_accident_count(db, structure_id),
     )
     return schemas.PriorityDetail(**{
         k: p[k] for k in ("priority_score", "priority_level",
                           "next_inspection_recommendation",
                           "recommended_interval_days", "breakdown")
+    })
+
+
+@router.get("/{structure_id}/risk-score", response_model=schemas.RiskScoreDetail)
+def get_risk_score(structure_id: int, db: Session = Depends(get_db)):
+    """Expert Risk Score (0-100) + reasons for the object card."""
+    obj = crud.get_structure(db, structure_id)
+    if not obj:
+        raise HTTPException(404, "Structure not found")
+    r = risk_score.compute_risk_score(
+        condition=obj.condition, year_built=obj.year_built,
+        last_inspection=obj.last_inspection,
+        accident_count=_accident_count(db, structure_id),
+    )
+    return schemas.RiskScoreDetail(**{
+        k: r[k] for k in ("risk_score", "risk_level", "risk_reasons", "color", "breakdown")
     })
 
 
