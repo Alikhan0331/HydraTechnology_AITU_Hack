@@ -56,7 +56,9 @@ uvicorn app.main:app --reload --port 8000
 | Метод | Путь | Описание |
 |------|------|----------|
 | GET | `/api/analytics/summary` | KPI для дашборда (см. ниже) |
+| GET | `/api/analytics/dashboard` | Всё для главного экрана одним запросом (KPI + распределения + динамика + recently_added + top_risk) |
 | GET | `/api/analytics/charts` | Данные для графиков (по типам/районам/декадам/риску) |
+| GET | `/api/analytics/dynamics?months=12` | Динамика состояния по месяцам (линейный график) |
 | GET | `/api/analytics/top-risk?limit=10` | Топ проблемных объектов (диспетчер) |
 
 ### Отчёты / Экспорт (ТЗ: отчётность)

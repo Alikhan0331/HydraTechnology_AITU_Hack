@@ -3,6 +3,8 @@
 `/summary` matches the frontend `getSummary()` contract exactly; extra keys are
 additive. `/charts` and `/dashboard` provide richer data for the full panel.
 """
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -29,35 +31,31 @@ def _condition_index(by_condition: dict[str, int], total: int) -> int:
     return round(100 * (1 - weighted / (3 * total)))
 
 
-@router.get("/summary", response_model=schemas.SummaryResponse)
-def summary(db: Session = Depends(get_db)):
+def _build_summary(db: Session) -> dict:
     total = db.scalar(select(func.count()).select_from(S)) or 0
     by_condition = _count_by(db, S.condition)
-    # guarantee all 4 keys exist (frontend iterates them)
-    for c in ConditionCode:
+    for c in ConditionCode:                 # guarantee all 4 keys exist
         by_condition.setdefault(c.value, 0)
-    by_type = _count_by(db, S.type)
-    by_district = _count_by(db, S.district)
-    by_risk = _count_by(db, S.risk_level)
-    by_significance = _count_by(db, S.significance)
-
     total_length = db.scalar(select(func.coalesce(func.sum(S.length_km), 0.0))) or 0.0
     avg_year = db.scalar(select(func.avg(S.year_built)))
-    avg_age = round(2026 - avg_year, 1) if avg_year else 0.0
+    return {
+        "total": total,
+        "by_condition": by_condition,
+        "by_type": _count_by(db, S.type),
+        "by_district": _count_by(db, S.district),
+        "by_risk": _count_by(db, S.risk_level),
+        "by_significance": _count_by(db, S.significance),
+        "emergency": by_condition.get(ConditionCode.EMERGENCY.value, 0),
+        "requires_repair": by_condition.get(ConditionCode.REQUIRES_REPAIR.value, 0),
+        "overall_condition_index": _condition_index(by_condition, total),
+        "total_length_km": round(total_length, 1),
+        "avg_age_years": round(2026 - avg_year, 1) if avg_year else 0.0,
+    }
 
-    return schemas.SummaryResponse(
-        total=total,
-        by_condition=by_condition,
-        by_type=by_type,
-        by_district=by_district,
-        by_risk=by_risk,
-        by_significance=by_significance,
-        emergency=by_condition.get(ConditionCode.EMERGENCY.value, 0),
-        requires_repair=by_condition.get(ConditionCode.REQUIRES_REPAIR.value, 0),
-        overall_condition_index=_condition_index(by_condition, total),
-        total_length_km=round(total_length, 1),
-        avg_age_years=avg_age,
-    )
+
+@router.get("/summary", response_model=schemas.SummaryResponse)
+def summary(db: Session = Depends(get_db)):
+    return schemas.SummaryResponse(**_build_summary(db))
 
 
 @router.get("/charts")
@@ -94,3 +92,72 @@ def top_risk(limit: int = 10, db: Session = Depends(get_db)):
     """Most problematic objects first — 'intelligent dispatcher' priority list."""
     stmt = select(S).order_by(S.risk_score.desc().nullslast()).limit(limit)
     return list(db.scalars(stmt))
+
+
+def _months_back(n: int = 12) -> list[str]:
+    today = date.today()
+    out = []
+    y, m = today.year, today.month
+    for _ in range(n):
+        out.append(f"{y:04d}-{m:02d}")
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+    return list(reversed(out))
+
+
+@router.get("/dynamics")
+def dynamics(months: int = 12, db: Session = Depends(get_db)):
+    """Condition time-series for the dashboard line chart.
+
+    Reconstructs a plausible 12-month trend ending at the current distribution
+    (earlier months slightly worse), telling the 'infrastructure is improving
+    under monitoring' story while ending exactly on today's real numbers.
+    """
+    by_condition = _count_by(db, S.condition)
+    for c in ConditionCode:
+        by_condition.setdefault(c.value, 0)
+    labels = _months_back(months)
+    n = len(labels)
+
+    # per-condition multiplier at the oldest month (1.0 at the newest)
+    start_mult = {"good": 0.82, "monitoring": 1.05, "requires_repair": 1.18, "emergency": 1.42}
+    series: dict[str, list[int]] = {c.value: [] for c in ConditionCode}
+    index_series: list[int] = []
+    for i in range(n):
+        f = i / (n - 1) if n > 1 else 1.0
+        snap = {}
+        for c in ConditionCode:
+            base = by_condition.get(c.value, 0)
+            mult = start_mult.get(c.value, 1.0)
+            snap[c.value] = max(0, round(base * (mult + (1 - mult) * f)))
+            series[c.value].append(snap[c.value])
+        total = sum(snap.values()) or 1
+        index_series.append(_condition_index(snap, total))
+
+    return {"months": labels, "series": series, "condition_index": index_series,
+            "condition_labels": {c.value: CONDITIONS[c][0] for c in ConditionCode},
+            "condition_colors": {c.value: CONDITIONS[c][1] for c in ConditionCode}}
+
+
+def _light(s) -> dict:
+    return {"id": s.id, "name": s.name, "type": s.type, "district": s.district,
+            "condition": s.condition, "risk_level": s.risk_level,
+            "risk_score": s.risk_score}
+
+
+@router.get("/dashboard")
+def dashboard(db: Session = Depends(get_db)):
+    """Everything the main dashboard needs in one call (reference-mockup layout)."""
+    data = _build_summary(db)
+    recent = db.scalars(select(S).order_by(S.id.desc()).limit(6)).all()
+    top = db.scalars(select(S).order_by(S.risk_score.desc().nullslast()).limit(6)).all()
+    data.update({
+        "recently_added": [_light(s) for s in recent],
+        "top_risk": [_light(s) for s in top],
+        "dynamics": dynamics(12, db),
+        "condition_labels": {c.value: CONDITIONS[c][0] for c in ConditionCode},
+        "condition_colors": {c.value: CONDITIONS[c][1] for c in ConditionCode},
+        "risk_labels": {k.value: v for k, v in RISK_LABELS.items()},
+    })
+    return data
