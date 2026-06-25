@@ -31,6 +31,16 @@ def river_for_district(district: str) -> str:
     return DISTRICTS.get(district, (0, 0, "р. Талас"))[2]
 
 
+def nearest_district(lat: float, lng: float) -> str:
+    """District whose center is closest to the given point."""
+    best, best_d = DISTRICT_NAMES[0], float("inf")
+    for name, (clat, clng, _r) in DISTRICTS.items():
+        d = (clat - lat) ** 2 + (clng - lng) ** 2
+        if d < best_d:
+            best, best_d = name, d
+    return best
+
+
 def haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     """Great-circle distance in meters."""
     r = 6371000.0

@@ -86,12 +86,15 @@ docker compose up --build
 |------|------|----------|
 | GET | `/api/detection/search?lat=&lon=&radius_km=` | Поиск ГТС по координатам |
 
-Возвращает `{ structures: [{id?, name, type, lat, lon, confidence, source, condition?}], summary, osm_available }`.
-Источники (`source`): `osm` (каталог + реальные данные OpenStreetMap через Overpass),
-`satellite_ndwi`, `dem`. Объекты, найденные вне базы, возвращаются без `id` и
-помечаются `verification_status: "new"|"needs_check"`. Дедупликация — по
-расстоянию Haversine (порог 350 м) к ближайшему объекту каталога. Работает и
-офлайн (демо-fallback), и онлайн (реальный Overpass).
+Возвращает `{ structures: [{id?, name, type, lat, lon, confidence, source, condition?}], summary, osm_source }`.
+Два **реальных** источника (`source`): `catalog` — объекты нашей базы в радиусе;
+`osm` — реальные объекты OpenStreetMap (живой Overpass; при отсутствии интернета —
+закэшированный реальный снимок региона `app/seed/data/osm_zhambyl.json`).
+`osm_source` = `live | cached | none`. **Сверка с базой:** каждый OSM-объект
+сопоставляется с ближайшим объектом каталога по расстоянию Haversine (порог 350 м)
+и схожести названия; совпавшие считаются `matched`, остальные возвращаются без `id`
+и помечаются `verification_status: needs_check` (ТЗ задача 4). Никаких синтетических
+данных — только каталог и реальный OSM.
 
 ### Справочники (для дропдаунов/легенд)
 `GET /api/meta/types` · `/api/meta/conditions` · `/api/meta/districts` ·

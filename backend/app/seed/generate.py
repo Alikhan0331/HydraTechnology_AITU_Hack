@@ -177,5 +177,44 @@ def generate_other() -> list[dict]:
     return out
 
 
+OSM_FILE = DATA_FILE.parent / "osm_zhambyl.json"
+
+
+def generate_osm_real() -> list[dict]:
+    """Add real, named objects from the OpenStreetMap snapshot to the catalog,
+    with their REAL coordinates. This anchors part of the catalog to real
+    geometry and lets the discovery/dedup compare and MATCH against the base."""
+    if not OSM_FILE.exists():
+        return []
+    data = json.loads(OSM_FILE.read_text(encoding="utf-8"))
+    seen: set[str] = set()
+    out = []
+    for i, o in enumerate(data):
+        name = o.get("name")
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        rng = random.Random(f"osm:{o['osm_id']}")
+        district = geo.nearest_district(o["lat"], o["lon"])
+        river = geo.river_for_district(district)
+        tc = o["type_code"]
+        rec = _assemble(
+            idx=f"osm{i}", name=name, type_code=tc, district=district,
+            year_built=rng.randint(1950, 2015),
+            length_km=(round(rng.uniform(3, 45), 1) if tc in ("canal", "dike") else None),
+            tech_condition=("unsatisfactory" if rng.random() < 0.3 else "satisfactory"),
+            wear_fraction=round(rng.uniform(0.15, 0.85), 2),
+            eff_design=None, eff_actual=None, water_source=river, locality=None,
+            capacity=(round(rng.uniform(1, 30), 1)
+                      if tc in ("pumping_station", "sluice", "water_intake") else None),
+            area_ha=None, length_earthen=None, length_lined=None, cadastral=None,
+            state_act=None, structures_count=None, source="osm",
+            description=f"Реальный объект из OpenStreetMap, {district} район.",
+        )
+        rec["latitude"], rec["longitude"] = round(o["lat"], 6), round(o["lon"], 6)
+        out.append(rec)
+    return out
+
+
 def build_all() -> list[dict]:
-    return generate_canals() + generate_other()
+    return generate_canals() + generate_other() + generate_osm_real()

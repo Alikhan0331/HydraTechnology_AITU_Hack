@@ -1,0 +1,2536 @@
+[
+ {
+  "osm_id": "way/22377317",
+  "lat": 42.693345,
+  "lon": 70.896442,
+  "type_code": "dam",
+  "name": "Теріс-Ащыбұлақ бөгені"
+ },
+ {
+  "osm_id": "way/27355148",
+  "lat": 42.566689,
+  "lon": 71.616094,
+  "type_code": "canal",
+  "name": "Большой Таласский канал"
+ },
+ {
+  "osm_id": "way/141076572",
+  "lat": 42.538961,
+  "lon": 70.997742,
+  "type_code": "canal",
+  "name": "канал Коксай"
+ },
+ {
+  "osm_id": "way/220020600",
+  "lat": 42.664548,
+  "lon": 71.599382,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/220027882",
+  "lat": 42.775827,
+  "lon": 71.262509,
+  "type_code": "sluice",
+  "name": null
+ },
+ {
+  "osm_id": "way/235417400",
+  "lat": 43.107162,
+  "lon": 70.756931,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/235419881",
+  "lat": 43.057994,
+  "lon": 70.939288,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/235419882",
+  "lat": 43.056293,
+  "lon": 70.833028,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/235419885",
+  "lat": 43.05893,
+  "lon": 70.918184,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/235578126",
+  "lat": 42.88803,
+  "lon": 71.410063,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/235578129",
+  "lat": 42.940801,
+  "lon": 71.359964,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/235583784",
+  "lat": 42.915416,
+  "lon": 71.402257,
+  "type_code": "canal",
+  "name": "Капал"
+ },
+ {
+  "osm_id": "way/235585996",
+  "lat": 43.001661,
+  "lon": 71.260153,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/235585997",
+  "lat": 42.963396,
+  "lon": 71.330906,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/251116673",
+  "lat": 42.8072,
+  "lon": 71.364698,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/352368199",
+  "lat": 43.030213,
+  "lon": 71.549749,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/352368200",
+  "lat": 43.02848,
+  "lon": 71.548136,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/352368201",
+  "lat": 43.032176,
+  "lon": 71.551575,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/405951797",
+  "lat": 42.50011,
+  "lon": 71.550316,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/457960724",
+  "lat": 42.777039,
+  "lon": 71.251631,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/458730880",
+  "lat": 42.787347,
+  "lon": 71.277994,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/458730881",
+  "lat": 42.78746,
+  "lon": 71.278912,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/458730882",
+  "lat": 42.787388,
+  "lon": 71.2747,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/458730883",
+  "lat": 42.786132,
+  "lon": 71.266903,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/458730884",
+  "lat": 42.787585,
+  "lon": 71.279432,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/458739469",
+  "lat": 42.822107,
+  "lon": 71.479988,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/458813619",
+  "lat": 42.545324,
+  "lon": 71.939293,
+  "type_code": "canal",
+  "name": "Большой Таласский канал"
+ },
+ {
+  "osm_id": "way/458813620",
+  "lat": 42.550197,
+  "lon": 71.967163,
+  "type_code": "canal",
+  "name": "Большой Таласский канал"
+ },
+ {
+  "osm_id": "way/459404513",
+  "lat": 42.901733,
+  "lon": 71.398185,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/459440225",
+  "lat": 42.889955,
+  "lon": 71.437544,
+  "type_code": "canal",
+  "name": "канал Базарбай"
+ },
+ {
+  "osm_id": "way/459443693",
+  "lat": 42.887834,
+  "lon": 71.41177,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332156",
+  "lat": 42.890048,
+  "lon": 71.313762,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332157",
+  "lat": 42.889555,
+  "lon": 71.31424,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332158",
+  "lat": 42.889206,
+  "lon": 71.314279,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332159",
+  "lat": 42.888923,
+  "lon": 71.313845,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332160",
+  "lat": 42.88863,
+  "lon": 71.313391,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332161",
+  "lat": 42.887661,
+  "lon": 71.311892,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332162",
+  "lat": 42.886702,
+  "lon": 71.310403,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332163",
+  "lat": 42.886012,
+  "lon": 71.309333,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332165",
+  "lat": 42.88534,
+  "lon": 71.308278,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332166",
+  "lat": 42.885118,
+  "lon": 71.307902,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332167",
+  "lat": 42.884848,
+  "lon": 71.307488,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332168",
+  "lat": 42.884397,
+  "lon": 71.306813,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332169",
+  "lat": 42.883485,
+  "lon": 71.305409,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332171",
+  "lat": 42.882845,
+  "lon": 71.304429,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332172",
+  "lat": 42.882086,
+  "lon": 71.303236,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332173",
+  "lat": 42.881207,
+  "lon": 71.301861,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332174",
+  "lat": 42.880894,
+  "lon": 71.301385,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332175",
+  "lat": 42.878254,
+  "lon": 71.297236,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332176",
+  "lat": 42.876028,
+  "lon": 71.293784,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332177",
+  "lat": 42.875514,
+  "lon": 71.293049,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332179",
+  "lat": 42.871879,
+  "lon": 71.292751,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332180",
+  "lat": 42.877278,
+  "lon": 71.296637,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332181",
+  "lat": 42.876874,
+  "lon": 71.297126,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332182",
+  "lat": 42.873773,
+  "lon": 71.298826,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460332183",
+  "lat": 42.869233,
+  "lon": 71.300209,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335812",
+  "lat": 42.884189,
+  "lon": 71.3088,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335813",
+  "lat": 42.8831,
+  "lon": 71.309863,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335814",
+  "lat": 42.882308,
+  "lon": 71.310607,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335815",
+  "lat": 42.881167,
+  "lon": 71.311691,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335816",
+  "lat": 42.880576,
+  "lon": 71.312135,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335817",
+  "lat": 42.877621,
+  "lon": 71.312794,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335818",
+  "lat": 42.874648,
+  "lon": 71.313404,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335819",
+  "lat": 42.872558,
+  "lon": 71.31615,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335820",
+  "lat": 42.861992,
+  "lon": 71.326997,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335821",
+  "lat": 42.850673,
+  "lon": 71.334338,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335822",
+  "lat": 42.847962,
+  "lon": 71.331801,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335823",
+  "lat": 42.847056,
+  "lon": 71.330777,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460335824",
+  "lat": 42.846432,
+  "lon": 71.329726,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460341483",
+  "lat": 42.831805,
+  "lon": 71.368794,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460341484",
+  "lat": 42.835142,
+  "lon": 71.370003,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460341485",
+  "lat": 42.830775,
+  "lon": 71.364008,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460341486",
+  "lat": 42.829349,
+  "lon": 71.364056,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350163",
+  "lat": 42.828281,
+  "lon": 71.364058,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350164",
+  "lat": 42.827932,
+  "lon": 71.36404,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350165",
+  "lat": 42.827789,
+  "lon": 71.363608,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350166",
+  "lat": 42.823488,
+  "lon": 71.360241,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350167",
+  "lat": 42.830936,
+  "lon": 71.363824,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350168",
+  "lat": 42.830941,
+  "lon": 71.363386,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350169",
+  "lat": 42.83108,
+  "lon": 71.359511,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350170",
+  "lat": 42.833692,
+  "lon": 71.364138,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350172",
+  "lat": 42.83752,
+  "lon": 71.364122,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350174",
+  "lat": 42.837592,
+  "lon": 71.363574,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350176",
+  "lat": 42.837697,
+  "lon": 71.357762,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350181",
+  "lat": 42.840155,
+  "lon": 71.362665,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350183",
+  "lat": 42.842431,
+  "lon": 71.36377,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350185",
+  "lat": 42.843366,
+  "lon": 71.362235,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350187",
+  "lat": 42.84348,
+  "lon": 71.366419,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350189",
+  "lat": 42.844152,
+  "lon": 71.37212,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350191",
+  "lat": 42.844809,
+  "lon": 71.377878,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350193",
+  "lat": 42.845014,
+  "lon": 71.38119,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350195",
+  "lat": 42.844941,
+  "lon": 71.384445,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350197",
+  "lat": 42.844829,
+  "lon": 71.388039,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350199",
+  "lat": 42.845779,
+  "lon": 71.354871,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350203",
+  "lat": 42.847855,
+  "lon": 71.351275,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350205",
+  "lat": 42.848479,
+  "lon": 71.350309,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350227",
+  "lat": 42.849884,
+  "lon": 71.347096,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350228",
+  "lat": 42.851303,
+  "lon": 71.344666,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350230",
+  "lat": 42.851928,
+  "lon": 71.34413,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350232",
+  "lat": 42.852548,
+  "lon": 71.343604,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350234",
+  "lat": 42.852918,
+  "lon": 71.343362,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350236",
+  "lat": 42.853325,
+  "lon": 71.343161,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350238",
+  "lat": 42.85594,
+  "lon": 71.341591,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350240",
+  "lat": 42.8624,
+  "lon": 71.337333,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350248",
+  "lat": 42.867769,
+  "lon": 71.333376,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350250",
+  "lat": 42.868792,
+  "lon": 71.332517,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350251",
+  "lat": 42.869756,
+  "lon": 71.331715,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350252",
+  "lat": 42.871499,
+  "lon": 71.330169,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350257",
+  "lat": 42.873239,
+  "lon": 71.328619,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350259",
+  "lat": 42.876161,
+  "lon": 71.326087,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350261",
+  "lat": 42.879141,
+  "lon": 71.323482,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350269",
+  "lat": 42.880633,
+  "lon": 71.322152,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350271",
+  "lat": 42.882053,
+  "lon": 71.320909,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350272",
+  "lat": 42.882233,
+  "lon": 71.320775,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350274",
+  "lat": 42.882808,
+  "lon": 71.320293,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350275",
+  "lat": 42.885184,
+  "lon": 71.318199,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350276",
+  "lat": 42.887204,
+  "lon": 71.316405,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350277",
+  "lat": 42.888342,
+  "lon": 71.315398,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350285",
+  "lat": 42.888377,
+  "lon": 71.306389,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350286",
+  "lat": 42.889028,
+  "lon": 71.299937,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350287",
+  "lat": 42.88718,
+  "lon": 71.300475,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350288",
+  "lat": 42.886903,
+  "lon": 71.300034,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460350289",
+  "lat": 42.885652,
+  "lon": 71.294585,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460352154",
+  "lat": 42.883913,
+  "lon": 71.28811,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460352155",
+  "lat": 42.883362,
+  "lon": 71.286761,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460352156",
+  "lat": 42.881089,
+  "lon": 71.283167,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460579445",
+  "lat": 42.887877,
+  "lon": 71.414116,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460579446",
+  "lat": 42.888901,
+  "lon": 71.415313,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460579471",
+  "lat": 42.889163,
+  "lon": 71.412941,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460579475",
+  "lat": 42.890108,
+  "lon": 71.41562,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765490",
+  "lat": 42.895557,
+  "lon": 71.291294,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765491",
+  "lat": 42.900585,
+  "lon": 71.28312,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765492",
+  "lat": 42.902909,
+  "lon": 71.276709,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765493",
+  "lat": 42.905517,
+  "lon": 71.268726,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765494",
+  "lat": 42.905908,
+  "lon": 71.266623,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765495",
+  "lat": 42.907295,
+  "lon": 71.259764,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765496",
+  "lat": 42.91079,
+  "lon": 71.242751,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765497",
+  "lat": 42.911232,
+  "lon": 71.240513,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765498",
+  "lat": 42.911657,
+  "lon": 71.238289,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765499",
+  "lat": 42.911897,
+  "lon": 71.236873,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765501",
+  "lat": 42.822719,
+  "lon": 71.249131,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765502",
+  "lat": 42.86494,
+  "lon": 71.242659,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765511",
+  "lat": 42.914805,
+  "lon": 71.238765,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765512",
+  "lat": 42.915863,
+  "lon": 71.238694,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765513",
+  "lat": 42.916886,
+  "lon": 71.238478,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765514",
+  "lat": 42.925046,
+  "lon": 71.235912,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765515",
+  "lat": 42.933258,
+  "lon": 71.233349,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765516",
+  "lat": 42.933724,
+  "lon": 71.233275,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765517",
+  "lat": 42.934154,
+  "lon": 71.23322,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460765518",
+  "lat": 42.936174,
+  "lon": 71.232957,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460771936",
+  "lat": 42.904221,
+  "lon": 71.3859,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/460993914",
+  "lat": 42.774034,
+  "lon": 71.5117,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/461204342",
+  "lat": 42.951591,
+  "lon": 71.530794,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/461204343",
+  "lat": 42.940277,
+  "lon": 71.517506,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/461204344",
+  "lat": 42.932491,
+  "lon": 71.510413,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/461204346",
+  "lat": 42.909955,
+  "lon": 71.487908,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/461516951",
+  "lat": 43.008514,
+  "lon": 71.428335,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/463076805",
+  "lat": 43.032626,
+  "lon": 71.522741,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/464282166",
+  "lat": 42.875915,
+  "lon": 71.346642,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/464282167",
+  "lat": 42.876431,
+  "lon": 71.346038,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/464282168",
+  "lat": 42.876634,
+  "lon": 71.345407,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465487508",
+  "lat": 42.819678,
+  "lon": 71.443116,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465487509",
+  "lat": 42.818108,
+  "lon": 71.439753,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465487510",
+  "lat": 42.817845,
+  "lon": 71.438943,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495534",
+  "lat": 42.832363,
+  "lon": 71.353974,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495541",
+  "lat": 42.846359,
+  "lon": 71.361686,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495543",
+  "lat": 42.844214,
+  "lon": 71.365205,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495544",
+  "lat": 42.845058,
+  "lon": 71.366776,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495546",
+  "lat": 42.845673,
+  "lon": 71.367665,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495549",
+  "lat": 42.847822,
+  "lon": 71.370459,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495552",
+  "lat": 42.850107,
+  "lon": 71.373619,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495554",
+  "lat": 42.851344,
+  "lon": 71.375008,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495555",
+  "lat": 42.85156,
+  "lon": 71.375782,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495559",
+  "lat": 42.853178,
+  "lon": 71.374449,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495560",
+  "lat": 42.854686,
+  "lon": 71.374016,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495561",
+  "lat": 42.856153,
+  "lon": 71.374221,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495569",
+  "lat": 42.858763,
+  "lon": 71.37434,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495570",
+  "lat": 42.860339,
+  "lon": 71.37431,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495601",
+  "lat": 42.864537,
+  "lon": 71.379264,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495602",
+  "lat": 42.864325,
+  "lon": 71.382736,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465495606",
+  "lat": 42.864018,
+  "lon": 71.383938,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465500755",
+  "lat": 42.864207,
+  "lon": 71.375442,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465500757",
+  "lat": 42.863837,
+  "lon": 71.371739,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465500761",
+  "lat": 42.863546,
+  "lon": 71.368247,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465649036",
+  "lat": 42.844694,
+  "lon": 71.391911,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465650967",
+  "lat": 42.86766,
+  "lon": 71.301311,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465650968",
+  "lat": 42.867532,
+  "lon": 71.301172,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/465650969",
+  "lat": 42.866765,
+  "lon": 71.300915,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183384",
+  "lat": 42.802497,
+  "lon": 71.295502,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183385",
+  "lat": 42.805522,
+  "lon": 71.2873,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183386",
+  "lat": 42.805449,
+  "lon": 71.287082,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183387",
+  "lat": 42.805386,
+  "lon": 71.286887,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183388",
+  "lat": 42.804679,
+  "lon": 71.282368,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183389",
+  "lat": 42.803986,
+  "lon": 71.277858,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183390",
+  "lat": 42.803849,
+  "lon": 71.276259,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183401",
+  "lat": 42.802556,
+  "lon": 71.287092,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183402",
+  "lat": 42.802817,
+  "lon": 71.28815,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183403",
+  "lat": 42.80288,
+  "lon": 71.288353,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183404",
+  "lat": 42.802932,
+  "lon": 71.288495,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467183405",
+  "lat": 42.801262,
+  "lon": 71.294755,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467192376",
+  "lat": 42.769857,
+  "lon": 71.262119,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467194258",
+  "lat": 42.846611,
+  "lon": 71.210744,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467194259",
+  "lat": 42.845815,
+  "lon": 71.211034,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467194260",
+  "lat": 42.845498,
+  "lon": 71.213582,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467194261",
+  "lat": 42.849394,
+  "lon": 71.210259,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467460834",
+  "lat": 43.075079,
+  "lon": 71.45837,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467460835",
+  "lat": 43.078234,
+  "lon": 71.459042,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467460836",
+  "lat": 43.086782,
+  "lon": 71.460556,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467463444",
+  "lat": 43.052189,
+  "lon": 71.502667,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467463445",
+  "lat": 43.052294,
+  "lon": 71.505324,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467463446",
+  "lat": 43.046994,
+  "lon": 71.50517,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467463447",
+  "lat": 43.056195,
+  "lon": 71.480669,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467463461",
+  "lat": 43.065362,
+  "lon": 71.45609,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/467590793",
+  "lat": 43.18902,
+  "lon": 71.373365,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112566",
+  "lat": 42.874931,
+  "lon": 71.347776,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112567",
+  "lat": 42.874374,
+  "lon": 71.348521,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112568",
+  "lat": 42.873001,
+  "lon": 71.350322,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112569",
+  "lat": 42.871593,
+  "lon": 71.352026,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112570",
+  "lat": 42.871195,
+  "lon": 71.352287,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112571",
+  "lat": 42.870796,
+  "lon": 71.352535,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112572",
+  "lat": 42.869064,
+  "lon": 71.353455,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112575",
+  "lat": 42.865513,
+  "lon": 71.355407,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112576",
+  "lat": 42.861627,
+  "lon": 71.356324,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471112577",
+  "lat": 42.855087,
+  "lon": 71.356284,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/471893067",
+  "lat": 42.675348,
+  "lon": 70.973113,
+  "type_code": "sluice",
+  "name": null
+ },
+ {
+  "osm_id": "way/471893068",
+  "lat": 42.68163,
+  "lon": 70.957368,
+  "type_code": "sluice",
+  "name": null
+ },
+ {
+  "osm_id": "way/471893069",
+  "lat": 42.681008,
+  "lon": 70.959384,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/472148605",
+  "lat": 42.954989,
+  "lon": 71.358811,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/472148606",
+  "lat": 42.956501,
+  "lon": 71.356534,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/472148607",
+  "lat": 42.9557,
+  "lon": 71.36094,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/472148608",
+  "lat": 42.955095,
+  "lon": 71.364319,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/477122726",
+  "lat": 42.911446,
+  "lon": 71.377544,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/477122727",
+  "lat": 42.908811,
+  "lon": 71.380752,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/477122728",
+  "lat": 42.910122,
+  "lon": 71.379116,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/477122729",
+  "lat": 42.905814,
+  "lon": 71.383767,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/477122730",
+  "lat": 42.907435,
+  "lon": 71.381974,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/477141666",
+  "lat": 42.889796,
+  "lon": 71.31213,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/477141668",
+  "lat": 42.890138,
+  "lon": 71.312902,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/545205645",
+  "lat": 42.626989,
+  "lon": 70.877251,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/683659881",
+  "lat": 42.672896,
+  "lon": 71.597707,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/684629720",
+  "lat": 42.751159,
+  "lon": 71.272794,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/684630111",
+  "lat": 42.758489,
+  "lon": 71.270639,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/684902004",
+  "lat": 42.716938,
+  "lon": 71.23709,
+  "type_code": "canal",
+  "name": "кан.Раис"
+ },
+ {
+  "osm_id": "way/857047949",
+  "lat": 42.664632,
+  "lon": 71.599406,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1058841140",
+  "lat": 42.942102,
+  "lon": 71.379322,
+  "type_code": "canal",
+  "name": "Капал"
+ },
+ {
+  "osm_id": "way/1058841141",
+  "lat": 42.942291,
+  "lon": 71.380458,
+  "type_code": "canal",
+  "name": "Капал"
+ },
+ {
+  "osm_id": "way/1058841142",
+  "lat": 42.941646,
+  "lon": 71.378139,
+  "type_code": "canal",
+  "name": "Капал"
+ },
+ {
+  "osm_id": "way/1058841143",
+  "lat": 42.941853,
+  "lon": 71.378294,
+  "type_code": "canal",
+  "name": "Капал"
+ },
+ {
+  "osm_id": "way/1059218021",
+  "lat": 42.887883,
+  "lon": 71.413178,
+  "type_code": "canal",
+  "name": "канал Базарбай"
+ },
+ {
+  "osm_id": "way/1059218022",
+  "lat": 42.890752,
+  "lon": 71.427916,
+  "type_code": "canal",
+  "name": "канал Базарбай"
+ },
+ {
+  "osm_id": "way/1191212311",
+  "lat": 42.899118,
+  "lon": 71.389404,
+  "type_code": "canal",
+  "name": "Фонтан"
+ },
+ {
+  "osm_id": "way/1314567999",
+  "lat": 42.880246,
+  "lon": 71.300356,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1314568000",
+  "lat": 42.880603,
+  "lon": 71.300918,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374193572",
+  "lat": 42.850448,
+  "lon": 71.345705,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374193573",
+  "lat": 42.849529,
+  "lon": 71.348564,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201053",
+  "lat": 42.827532,
+  "lon": 71.359843,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201054",
+  "lat": 42.827846,
+  "lon": 71.363894,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201055",
+  "lat": 42.827467,
+  "lon": 71.364028,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201056",
+  "lat": 42.827657,
+  "lon": 71.364032,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201057",
+  "lat": 42.831376,
+  "lon": 71.36398,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201058",
+  "lat": 42.832868,
+  "lon": 71.363949,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201063",
+  "lat": 42.827116,
+  "lon": 71.364034,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201064",
+  "lat": 42.825511,
+  "lon": 71.36402,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201065",
+  "lat": 42.834363,
+  "lon": 71.363955,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201066",
+  "lat": 42.837952,
+  "lon": 71.363865,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201067",
+  "lat": 42.839759,
+  "lon": 71.361083,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1374201068",
+  "lat": 42.836295,
+  "lon": 71.357606,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1391799909",
+  "lat": 42.887784,
+  "lon": 71.414565,
+  "type_code": "canal",
+  "name": "канал Базарбай"
+ },
+ {
+  "osm_id": "way/1391799910",
+  "lat": 42.889417,
+  "lon": 71.421088,
+  "type_code": "canal",
+  "name": "канал Базарбай"
+ },
+ {
+  "osm_id": "way/1391799911",
+  "lat": 42.889905,
+  "lon": 71.41434,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1393156552",
+  "lat": 42.70609,
+  "lon": 71.493403,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1429192145",
+  "lat": 42.881626,
+  "lon": 71.311275,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1445349266",
+  "lat": 42.86705,
+  "lon": 71.334006,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1445349267",
+  "lat": 42.866432,
+  "lon": 71.334549,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1450736670",
+  "lat": 42.973123,
+  "lon": 71.408729,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1450813822",
+  "lat": 42.985679,
+  "lon": 71.411248,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1454824242",
+  "lat": 42.995568,
+  "lon": 71.424935,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1454923879",
+  "lat": 42.963725,
+  "lon": 71.470017,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1454923882",
+  "lat": 42.941098,
+  "lon": 71.464088,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1458481831",
+  "lat": 42.98733,
+  "lon": 71.466026,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1458498316",
+  "lat": 42.987847,
+  "lon": 71.468496,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1458506131",
+  "lat": 42.990321,
+  "lon": 71.458302,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1458506133",
+  "lat": 42.995728,
+  "lon": 71.46254,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1458506135",
+  "lat": 42.992684,
+  "lon": 71.460074,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1459908572",
+  "lat": 42.892135,
+  "lon": 71.463457,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460151130",
+  "lat": 42.839425,
+  "lon": 71.484069,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294280",
+  "lat": 42.82629,
+  "lon": 71.441411,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294281",
+  "lat": 42.825281,
+  "lon": 71.440331,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294282",
+  "lat": 42.82412,
+  "lon": 71.441781,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294283",
+  "lat": 42.824975,
+  "lon": 71.443096,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294284",
+  "lat": 42.824651,
+  "lon": 71.438441,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294285",
+  "lat": 42.822876,
+  "lon": 71.439995,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294286",
+  "lat": 42.826312,
+  "lon": 71.445001,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294287",
+  "lat": 42.827446,
+  "lon": 71.446652,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294288",
+  "lat": 42.827857,
+  "lon": 71.443626,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294289",
+  "lat": 42.828405,
+  "lon": 71.444867,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294290",
+  "lat": 42.829326,
+  "lon": 71.44595,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294291",
+  "lat": 42.828641,
+  "lon": 71.448363,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294292",
+  "lat": 42.829879,
+  "lon": 71.450179,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294293",
+  "lat": 42.831419,
+  "lon": 71.448782,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294294",
+  "lat": 42.831134,
+  "lon": 71.452062,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294295",
+  "lat": 42.83212,
+  "lon": 71.449895,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294296",
+  "lat": 42.833041,
+  "lon": 71.450979,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294297",
+  "lat": 42.834487,
+  "lon": 71.453265,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294298",
+  "lat": 42.832531,
+  "lon": 71.454102,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294299",
+  "lat": 42.831852,
+  "lon": 71.453915,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294300",
+  "lat": 42.834657,
+  "lon": 71.457322,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294301",
+  "lat": 42.835967,
+  "lon": 71.45523,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294304",
+  "lat": 42.833063,
+  "lon": 71.454909,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460294305",
+  "lat": 42.833222,
+  "lon": 71.454954,
+  "type_code": "pumping_station",
+  "name": null
+ },
+ {
+  "osm_id": "way/1460605578",
+  "lat": 42.797127,
+  "lon": 71.435221,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1461327712",
+  "lat": 42.794019,
+  "lon": 71.460021,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462003721",
+  "lat": 42.799415,
+  "lon": 71.55079,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462042006",
+  "lat": 42.785576,
+  "lon": 71.558796,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462042007",
+  "lat": 42.787112,
+  "lon": 71.558482,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462042008",
+  "lat": 42.784356,
+  "lon": 71.559771,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462042009",
+  "lat": 42.781635,
+  "lon": 71.565111,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462042011",
+  "lat": 42.784952,
+  "lon": 71.561773,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462042012",
+  "lat": 42.781545,
+  "lon": 71.564659,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462042019",
+  "lat": 42.779497,
+  "lon": 71.568967,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395565",
+  "lat": 42.813448,
+  "lon": 71.540949,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395574",
+  "lat": 42.824439,
+  "lon": 71.531458,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395576",
+  "lat": 42.825963,
+  "lon": 71.530868,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395577",
+  "lat": 42.834545,
+  "lon": 71.513902,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395579",
+  "lat": 42.828048,
+  "lon": 71.526538,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395581",
+  "lat": 42.828927,
+  "lon": 71.524286,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395582",
+  "lat": 42.829451,
+  "lon": 71.522429,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395583",
+  "lat": 42.828426,
+  "lon": 71.525862,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395584",
+  "lat": 42.828335,
+  "lon": 71.525757,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395587",
+  "lat": 42.831078,
+  "lon": 71.520822,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395588",
+  "lat": 42.830711,
+  "lon": 71.521323,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395590",
+  "lat": 42.831516,
+  "lon": 71.520195,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395591",
+  "lat": 42.831568,
+  "lon": 71.519746,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395593",
+  "lat": 42.829905,
+  "lon": 71.522537,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462395594",
+  "lat": 42.829856,
+  "lon": 71.521863,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462398554",
+  "lat": 42.843258,
+  "lon": 71.495279,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462426460",
+  "lat": 42.812328,
+  "lon": 71.533625,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462437246",
+  "lat": 42.821549,
+  "lon": 71.511202,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462437254",
+  "lat": 42.821583,
+  "lon": 71.510957,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1462437300",
+  "lat": 42.831806,
+  "lon": 71.502952,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1463424315",
+  "lat": 42.838469,
+  "lon": 71.506577,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1463424356",
+  "lat": 42.837669,
+  "lon": 71.507771,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1463715549",
+  "lat": 42.821083,
+  "lon": 71.696845,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1463715555",
+  "lat": 42.827218,
+  "lon": 71.707423,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464200649",
+  "lat": 42.775799,
+  "lon": 71.2629,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464200651",
+  "lat": 42.777176,
+  "lon": 71.263766,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464200661",
+  "lat": 42.79491,
+  "lon": 71.251086,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464200666",
+  "lat": 42.786904,
+  "lon": 71.253888,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464428742",
+  "lat": 42.843908,
+  "lon": 71.234151,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464428743",
+  "lat": 42.844606,
+  "lon": 71.235963,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464441041",
+  "lat": 42.856917,
+  "lon": 71.24373,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464441042",
+  "lat": 42.848908,
+  "lon": 71.24482,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464441074",
+  "lat": 42.84513,
+  "lon": 71.234897,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464885273",
+  "lat": 42.876131,
+  "lon": 71.222397,
+  "type_code": "dam",
+  "name": null
+ },
+ {
+  "osm_id": "way/1464885280",
+  "lat": 42.865297,
+  "lon": 71.223604,
+  "type_code": "dike",
+  "name": null
+ },
+ {
+  "osm_id": "way/1470079496",
+  "lat": 42.99495,
+  "lon": 71.319852,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1471745843",
+  "lat": 43.017692,
+  "lon": 71.321673,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1471745844",
+  "lat": 43.017337,
+  "lon": 71.322164,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1504494396",
+  "lat": 42.909743,
+  "lon": 71.24786,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1504494397",
+  "lat": 42.908696,
+  "lon": 71.252908,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "way/1531786811",
+  "lat": 42.668059,
+  "lon": 71.598408,
+  "type_code": "canal",
+  "name": null
+ },
+ {
+  "osm_id": "relation/1140641",
+  "lat": 42.634977,
+  "lon": 71.631469,
+  "type_code": "dam",
+  "name": "Киров суу сактагычы"
+ }
+]
