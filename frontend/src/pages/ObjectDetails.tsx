@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getStructure, getStructureRisk } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
-import axios from "axios";
 
 interface Inspection { date: string; inspector: string; result: string; condition: string; }
 
@@ -36,6 +35,19 @@ const statusColors: Record<string, string> = {
   "Критическое состояние": "#dc2626",
 };
 
+// Нормализует ответ риска: если factors не массив — берём fallback
+function normalizeRisk(data: any) {
+  if (!data) return MOCK_RISK;
+  let factors = data.factors;
+  if (!Array.isArray(factors)) {
+    // если объект — превращаем в массив, если null/undefined — пустой массив
+    factors = factors && typeof factors === "object"
+      ? Object.entries(factors).map(([name, val]: any) => ({ name, value: val?.value ?? val, weight: val?.weight ?? 0, score: val?.score ?? 0 }))
+      : MOCK_RISK.factors;
+  }
+  return { ...MOCK_RISK, ...data, factors };
+}
+
 export default function ObjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,7 +57,7 @@ export default function ObjectDetails() {
   useEffect(() => {
     if (id) {
       getStructure(Number(id)).then((res) => setObj({ ...MOCK, ...res.data })).catch(() => {});
-      getStructureRisk(Number(id)).then((res) => setRisk(res.data)).catch(() => {});
+      getStructureRisk(Number(id)).then((res) => setRisk(normalizeRisk(res.data))).catch(() => {});
     }
   }, [id]);
 
@@ -93,33 +105,29 @@ export default function ObjectDetails() {
             <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
               <h3 style={{ fontSize: "15px", color: "var(--gray-900)", margin: "0 0 16px" }}>🛡️ Модель риска и осмотра</h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "20px" }}>
-                {/* Risk score */}
                 <div style={{ background: "var(--gray-50)", borderRadius: "var(--radius-sm)", padding: "16px", border: "1px solid var(--gray-200)", textAlign: "center" }}>
                   <div style={{ fontSize: "11px", color: "var(--gray-400)", marginBottom: "8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Индекс риска</div>
                   <div style={{ fontSize: "36px", fontFamily: "Manrope", fontWeight: 900, color: recColor, lineHeight: 1 }}>{risk.risk_score}</div>
                   <div style={{ fontSize: "11px", color: "var(--gray-400)", marginTop: "4px" }}>из 100</div>
                 </div>
-                {/* Recommendation */}
                 <div style={{ background: recColor + "0f", borderRadius: "var(--radius-sm)", padding: "16px", border: `1px solid ${recColor}30`, textAlign: "center" }}>
                   <div style={{ fontSize: "11px", color: "var(--gray-400)", marginBottom: "8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Статус</div>
                   <div style={{ fontSize: "14px", fontWeight: 800, color: recColor }}>{risk.recommendation}</div>
                 </div>
-                {/* Next inspection */}
                 <div style={{ background: "var(--primary-bg)", borderRadius: "var(--radius-sm)", padding: "16px", border: "1px solid #bfdbfe", textAlign: "center" }}>
                   <div style={{ fontSize: "11px", color: "var(--gray-400)", marginBottom: "8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>След. осмотр</div>
                   <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--primary)" }}>{risk.next_inspection}</div>
                 </div>
               </div>
-              {/* Factor bars */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {(risk.factors || []).map((f: any, i: number) => (
+                {risk.factors.map((f: any, i: number) => (
                   <div key={i}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                       <span style={{ fontSize: "12px", color: "var(--gray-600)", fontWeight: 500 }}>{f.name}</span>
                       <span style={{ fontSize: "12px", color: "var(--gray-400)" }}>{f.score} / {Math.round(f.weight * 100)}</span>
                     </div>
                     <div style={{ height: 6, background: "var(--gray-100)", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${(f.score / (f.weight * 100)) * 100}%`, background: "var(--primary-light)", borderRadius: 3, transition: "width 0.5s" }} />
+                      <div style={{ height: "100%", width: `${Math.min((f.score / (f.weight * 100)) * 100, 100)}%`, background: "var(--primary-light)", borderRadius: 3, transition: "width 0.5s" }} />
                     </div>
                   </div>
                 ))}
@@ -128,9 +136,8 @@ export default function ObjectDetails() {
           )}
         </div>
 
-        {/* Right column: Inspection history + Export */}
+        {/* Right column */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Export */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 12px", fontWeight: 700 }}>📥 Экспорт отчёта</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -152,7 +159,6 @@ export default function ObjectDetails() {
             </div>
           </div>
 
-          {/* Inspection history */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 16px", fontWeight: 700 }}>📋 История обследований</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
