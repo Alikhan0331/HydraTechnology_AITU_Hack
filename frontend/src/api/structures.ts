@@ -49,5 +49,14 @@ export const getTopRisk = (limit = 10) =>
 export const getStructureRisk = (id: number) =>
   axios.get(`${BASE}/structures/${id}/risk`);
 
+export const recomputeRisk = (id: number) =>
+  axios.post(`${BASE}/structures/${id}/risk`);
+
+export const getInspections = (id: number) =>
+  axios.get(`${BASE}/structures/${id}/inspections`);
+
+export const addInspection = (id: number, data: Record<string, any>) =>
+  axios.post(`${BASE}/structures/${id}/inspections`, data);
+
 export const getMeta = (key: string) =>
   axios.get(`${BASE}/meta/${key}`);

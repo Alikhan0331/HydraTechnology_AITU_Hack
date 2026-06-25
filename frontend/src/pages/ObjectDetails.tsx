@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getStructure, getStructureRisk, deleteStructure } from "../api/structures";
+import {
+  getStructure,
+  getStructureRisk,
+  recomputeRisk,
+  deleteStructure,
+  addInspection,
+} from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
 
 const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
@@ -8,36 +14,17 @@ const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:800
 interface Inspection { date: string; inspector: string; result: string; condition: string; }
 
 const MOCK: any = {
-  id: 1,
-  name: "Большой Чуйский канал",
-  type: "Канал",
-  type_code: "canal",
-  district: "Жамбылский",
-  locality: "с. Аса",
-  water_source: "р. Чу",
-  condition: "good",
-  risk_level: "low",
-  risk_score: 28,
-  latitude: 42.85,
-  longitude: 71.37,
-  length_km: 120.5,
-  length_earthen_km: 86.2,
-  length_lined_km: 34.3,
-  year_built: 1958,
-  last_inspection: "2024-03-15",
-  next_inspection: "2024-09-15",
+  id: 1, name: "Большой Чуйский канал", type: "Канал", type_code: "canal",
+  district: "Жамбылский", locality: "с. Аса", water_source: "р. Чу",
+  condition: "good", risk_level: "low", risk_score: 28,
+  latitude: 42.85, longitude: 71.37, length_km: 120.5,
+  length_earthen_km: 86.2, length_lined_km: 34.3, year_built: 1958,
+  last_inspection: "2024-03-15", next_inspection: "2024-09-15",
   description: "Главный ирригационный канал Жамбылского региона.",
-  significance: "regional",
-  capacity: 18.5,
-  area_ha: 12400,
-  efficiency_design: 0.82,
-  efficiency_actual: 0.73,
-  wear_percent: 41,
-  structures_count: 12,
-  cadastral_number: "12-345-678-901",
-  state_act: "ACT-2021-44",
-  source: "dataset",
-  verification_status: "verified",
+  significance: "regional", capacity: 18.5, area_ha: 12400,
+  efficiency_design: 0.82, efficiency_actual: 0.73, wear_percent: 41,
+  structures_count: 12, cadastral_number: "12-345-678-901",
+  state_act: "ACT-2021-44", source: "dataset", verification_status: "verified",
   inspections: [
     { date: "2024-03-15", inspector: "Ахметов Б.", result: "Плановый осмотр. Нарушений не выявлено.", condition: "good" },
     { date: "2023-09-10", inspector: "Сейткали Д.", result: "Мелкие трещины. Рекомендован ремонт облицовки.", condition: "monitoring" },
@@ -45,9 +32,7 @@ const MOCK: any = {
 };
 
 const MOCK_RISK: any = {
-  risk_score: 72,
-  recommendation: "Требуется осмотр",
-  next_inspection: "2024-09-15",
+  risk_score: 72, recommendation: "Требуется осмотр", next_inspection: "2024-09-15",
   factors: [
     { name: "Возраст сооружения", value: 66, weight: 22, score: 16 },
     { name: "Текущее состояние", value: "Норма", weight: 38, score: 20 },
@@ -58,35 +43,20 @@ const MOCK_RISK: any = {
 };
 
 const statusColors: Record<string, string> = {
-  "Норма": "#16a34a",
-  "Требуется осмотр": "#d97706",
-  "Требуется ремонт": "#ea580c",
-  "Критическое состояние": "#dc2626",
+  "Норма": "#16a34a", "Требуется осмотр": "#d97706",
+  "Требуется ремонт": "#ea580c", "Критическое состояние": "#dc2626",
 };
-
 const riskLevelLabel: Record<string, string> = {
-  low: "Низкий",
-  medium: "Средний",
-  high: "Высокий",
-  critical: "Критический",
+  low: "Низкий", medium: "Средний", high: "Высокий", critical: "Критический",
 };
-
 const significanceLabel: Record<string, string> = {
-  local: "Местный",
-  regional: "Региональный",
-  national: "Национальный",
+  local: "Местный", regional: "Региональный", national: "Национальный",
 };
-
 const sourceLabel: Record<string, string> = {
-  dataset: "Госдатасет",
-  manual: "Ручной ввод",
-  generated: "Сгенерировано системой",
+  dataset: "Госдатасет", manual: "Ручной ввод", generated: "Сгенерировано системой",
 };
-
 const verificationLabel: Record<string, string> = {
-  verified: "Проверено",
-  pending: "На проверке",
-  unverified: "Не проверено",
+  verified: "Проверено", pending: "На проверке", unverified: "Не проверено",
 };
 
 function normalizeRisk(data: any) {
@@ -105,16 +75,7 @@ function normalizeRisk(data: any) {
 
 function StatPill({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div style={{
-      padding: "10px 12px",
-      borderRadius: "12px",
-      background: color + "12",
-      border: `1px solid ${color}28`,
-      display: "flex",
-      flexDirection: "column",
-      gap: "3px",
-      minWidth: 0,
-    }}>
+    <div style={{ padding: "10px 12px", borderRadius: "12px", background: color + "12", border: `1px solid ${color}28`, display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
       <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.7px", textTransform: "uppercase", color }}>{label}</span>
       <span style={{ fontSize: "14px", fontWeight: 800, color: "var(--gray-900)" }}>{value}</span>
     </div>
@@ -123,20 +84,126 @@ function StatPill({ label, value, color }: { label: string; value: string; color
 
 function InfoRow({ label, value, mono = false }: { label: string; value: any; mono?: boolean }) {
   return (
-    <div style={{
-      display: "flex",
-      justifyContent: "space-between",
-      gap: "16px",
-      padding: "10px 0",
-      borderBottom: "1px dashed var(--gray-200)",
-      alignItems: "center",
-    }}>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", padding: "10px 0", borderBottom: "1px dashed var(--gray-200)", alignItems: "center" }}>
       <span style={{ fontSize: "12px", color: "var(--gray-500)", fontWeight: 600 }}>{label}</span>
       <span style={{ fontSize: "13px", color: "var(--gray-800)", fontWeight: 700, fontFamily: mono ? "monospace" : "inherit", textAlign: "right" }}>{value ?? "—"}</span>
     </div>
   );
 }
 
+// ─── Add Inspection Modal ────────────────────────────────────────────────────
+const CONDITION_OPTIONS = [
+  { value: "good", label: "Норма" },
+  { value: "monitoring", label: "Наблюдение" },
+  { value: "requires_repair", label: "Требует ремонта" },
+  { value: "emergency", label: "Аварийное" },
+];
+
+function AddInspectionModal({ structureId, onClose, onSaved }: { structureId: number; onClose: () => void; onSaved: (insp: any) => void }) {
+  const today = new Date().toISOString().split("T")[0];
+  const [form, setForm] = useState({ date: today, inspector: "", condition_found: "good", wear_found: "", notes: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.inspector.trim()) { setError("Введите имя инспектора"); return; }
+    setSaving(true); setError("");
+    try {
+      const payload: any = {
+        date: form.date,
+        inspector: form.inspector.trim(),
+        condition_found: form.condition_found,
+        notes: form.notes.trim() || null,
+      };
+      if (form.wear_found !== "") payload.wear_found = parseFloat(form.wear_found);
+      const res = await addInspection(structureId, payload);
+      onSaved(res.data);
+      onClose();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Ошибка при сохранении");
+    } finally { setSaving(false); }
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "9px 12px", borderRadius: "8px",
+    border: "1px solid var(--gray-200)", fontSize: "13px",
+    color: "var(--gray-800)", outline: "none", boxSizing: "border-box",
+    background: "white",
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+      <div style={{ background: "white", borderRadius: "16px", padding: "28px", width: "100%", maxWidth: "460px", boxShadow: "0 24px 64px rgba(0,0,0,0.18)", animation: "fadeIn .15s ease" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "var(--gray-900)" }}>📋 Новый осмотр</h3>
+            <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--gray-400)" }}>Добавление записи об обследовании объекта</p>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--gray-400)", lineHeight: 1 }}>×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: 700, color: "var(--gray-500)", textTransform: "uppercase", letterSpacing: "0.6px", display: "block", marginBottom: "5px" }}>Дата осмотра</label>
+              <input type="date" value={form.date} onChange={e => set("date", e.target.value)} required style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: 700, color: "var(--gray-500)", textTransform: "uppercase", letterSpacing: "0.6px", display: "block", marginBottom: "5px" }}>Износ (%)</label>
+              <input type="number" min="0" max="100" step="0.1" placeholder="напр. 45" value={form.wear_found} onChange={e => set("wear_found", e.target.value)} style={inputStyle} />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: "11px", fontWeight: 700, color: "var(--gray-500)", textTransform: "uppercase", letterSpacing: "0.6px", display: "block", marginBottom: "5px" }}>Инспектор / Организация *</label>
+            <input type="text" placeholder="напр. Отдел эксплуатации" value={form.inspector} onChange={e => set("inspector", e.target.value)} required style={inputStyle} />
+          </div>
+
+          <div>
+            <label style={{ fontSize: "11px", fontWeight: 700, color: "var(--gray-500)", textTransform: "uppercase", letterSpacing: "0.6px", display: "block", marginBottom: "8px" }}>Выявленное состояние</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+              {CONDITION_OPTIONS.map(opt => (
+                <button key={opt.value} type="button"
+                  onClick={() => set("condition_found", opt.value)}
+                  style={{
+                    padding: "8px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer",
+                    border: form.condition_found === opt.value ? `2px solid ${conditionColor[opt.value]}` : "1px solid var(--gray-200)",
+                    background: form.condition_found === opt.value ? conditionColor[opt.value] + "18" : "white",
+                    color: form.condition_found === opt.value ? conditionColor[opt.value] : "var(--gray-600)",
+                    transition: "all .15s",
+                  }}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: "11px", fontWeight: 700, color: "var(--gray-500)", textTransform: "uppercase", letterSpacing: "0.6px", display: "block", marginBottom: "5px" }}>Примечания</label>
+            <textarea placeholder="Описание выявленных дефектов, рекомендации..." value={form.notes} onChange={e => set("notes", e.target.value)}
+              rows={3} style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5 }} />
+          </div>
+
+          {error && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 12px", fontSize: "13px", color: "#dc2626", fontWeight: 500 }}>⚠ {error}</div>}
+
+          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", paddingTop: "4px" }}>
+            <button type="button" onClick={onClose} disabled={saving}
+              style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid var(--gray-200)", background: "white", color: "var(--gray-600)", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>Отмена</button>
+            <button type="submit" disabled={saving}
+              style={{ padding: "10px 24px", borderRadius: "8px", border: "none", background: saving ? "#93c5fd" : "#1d4ed8", color: "white", fontWeight: 700, fontSize: "13px", cursor: saving ? "default" : "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+              {saving ? "⏳ Сохранение..." : "✓ Сохранить осмотр"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
 export default function ObjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -144,38 +211,77 @@ export default function ObjectDetails() {
   const [risk, setRisk] = useState<any>(MOCK_RISK);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showInspModal, setShowInspModal] = useState(false);
+  const [recomputingRisk, setRecomputingRisk] = useState(false);
+  const [riskToast, setRiskToast] = useState("");
 
-  useEffect(() => {
-    if (id) {
-      getStructure(Number(id)).then((res) => setObj({ ...MOCK, ...res.data })).catch(() => {});
-      getStructureRisk(Number(id)).then((res) => setRisk(normalizeRisk(res.data))).catch(() => {});
-    }
-  }, [id]);
+  const loadData = () => {
+    if (!id) return;
+    getStructure(Number(id)).then(res => setObj((prev: any) => ({ ...prev, ...res.data }))).catch(() => {});
+    getStructureRisk(Number(id)).then(res => setRisk(normalizeRisk(res.data))).catch(() => {});
+  };
+
+  useEffect(() => { loadData(); }, [id]);
 
   const handleDelete = async () => {
     setDeleting(true);
-    try {
-      await deleteStructure(Number(id));
-      navigate("/catalog");
-    } catch {
-      alert("Ошибка при удалении");
-      setDeleting(false);
-      setShowDeleteModal(false);
-    }
+    try { await deleteStructure(Number(id)); navigate("/catalog"); }
+    catch { alert("Ошибка при удалении"); setDeleting(false); setShowDeleteModal(false); }
   };
 
-  const handleViewOnMap = () => {
-    navigate(`/detection?lat=${obj.latitude}&lng=${obj.longitude}&id=${id}&name=${encodeURIComponent(obj.name)}`);
+  const handleRecomputeRisk = async () => {
+    setRecomputingRisk(true); setRiskToast("");
+    try {
+      const res = await recomputeRisk(Number(id));
+      setRisk(normalizeRisk(res.data));
+      setRiskToast("✅ Риск пересчитан");
+      setTimeout(() => setRiskToast(""), 3000);
+    } catch { setRiskToast("❌ Ошибка пересчёта"); setTimeout(() => setRiskToast(""), 3000); }
+    finally { setRecomputingRisk(false); }
   };
+
+  const handleInspectionSaved = (newInsp: any) => {
+    // Map backend fields to frontend shape
+    const mapped = {
+      date: newInsp.date,
+      inspector: newInsp.inspector,
+      result: newInsp.notes || "",
+      condition: newInsp.condition_found,
+    };
+    setObj((prev: any) => ({ ...prev, inspections: [mapped, ...(prev.inspections || [])] }));
+    // Reload risk since condition/wear may have changed
+    getStructureRisk(Number(id)).then(res => setRisk(normalizeRisk(res.data))).catch(() => {});
+  };
+
+  const handleViewOnMap = () => navigate(`/detection?lat=${obj.latitude}&lng=${obj.longitude}&id=${id}&name=${encodeURIComponent(obj.name)}`);
 
   const recColor = statusColors[risk?.recommendation] || ({ low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626" }[obj.risk_level] || "#2563eb");
   const ageYears = obj.year_built ? (2026 - obj.year_built) : null;
   const efficiencyLoss = (obj.efficiency_design && obj.efficiency_actual)
-    ? Math.max(0, Math.round((obj.efficiency_design - obj.efficiency_actual) * 100))
-    : null;
+    ? Math.max(0, Math.round((obj.efficiency_design - obj.efficiency_actual) * 100)) : null;
+
+  // Build export URL respecting current object context
+  const exportUrl = (fmt: string) => `${BASE_URL}/api/reports/structures.${fmt}`;
 
   return (
     <div style={{ padding: "32px", background: "var(--gray-50)", minHeight: "100vh" }}>
+      {/* Risk Toast */}
+      {riskToast && (
+        <div style={{ position: "fixed", top: "24px", right: "24px", zIndex: 2000, background: "white", border: "1px solid var(--gray-200)", borderRadius: "10px", padding: "12px 18px", boxShadow: "0 8px 32px rgba(0,0,0,0.12)", fontSize: "14px", fontWeight: 600, color: "var(--gray-800)" }}>
+          {riskToast}
+        </div>
+      )}
+
+      {/* Add Inspection Modal */}
+      {showInspModal && (
+        <AddInspectionModal
+          structureId={Number(id)}
+          onClose={() => setShowInspModal(false)}
+          onSaved={handleInspectionSaved}
+        />
+      )}
+
+      {/* Delete Modal */}
       {showDeleteModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "white", borderRadius: "12px", padding: "32px", maxWidth: "400px", width: "90%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
@@ -190,26 +296,22 @@ export default function ObjectDetails() {
         </div>
       )}
 
+      {/* Top bar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "10px" }}>
         <button onClick={() => navigate(-1)} style={{ background: "white", border: "1px solid var(--gray-200)", padding: "8px 16px", borderRadius: "var(--radius-sm)", cursor: "pointer", color: "var(--gray-600)", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px", boxShadow: "var(--shadow-sm)", fontWeight: 500 }}>← Назад</button>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <button onClick={handleViewOnMap} style={{ padding: "8px 18px", borderRadius: "var(--radius-sm)", border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>🗺️ На карте</button>
+          <button onClick={() => setShowInspModal(true)} style={{ padding: "8px 18px", borderRadius: "var(--radius-sm)", border: "1px solid #a5f3fc", background: "#ecfeff", color: "#0891b2", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>📋 Добавить осмотр</button>
           <button onClick={() => navigate(`/edit/${id}`)} style={{ padding: "8px 18px", borderRadius: "var(--radius-sm)", border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>✏️ Редактировать</button>
           <button onClick={() => setShowDeleteModal(true)} style={{ padding: "8px 18px", borderRadius: "var(--radius-sm)", border: "1px solid #fecaca", background: "#fff5f5", color: "#dc2626", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>🗑️ Удалить</button>
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "20px", alignItems: "start" }}>
+        {/* ── Left column ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{
-            background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)",
-            borderRadius: "var(--radius-xl)",
-            padding: "28px",
-            border: "1px solid var(--gray-200)",
-            boxShadow: "var(--shadow-sm)",
-            position: "relative",
-            overflow: "hidden",
-          }}>
+          {/* Hero card */}
+          <div style={{ background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)", borderRadius: "var(--radius-xl)", padding: "28px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -60, right: -60, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.16), rgba(59,130,246,0))" }} />
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "18px", flexWrap: "wrap", gap: "12px", position: "relative" }}>
@@ -236,9 +338,7 @@ export default function ObjectDetails() {
                 <div style={{ height: 10, background: "var(--gray-100)", borderRadius: 999, overflow: "hidden", marginBottom: "12px" }}>
                   <div style={{ height: "100%", width: `${Math.min(Number(obj.risk_score ?? risk?.score ?? 0), 100)}%`, background: `linear-gradient(90deg, ${recColor}, ${recColor}cc)`, borderRadius: 999 }} />
                 </div>
-                <div style={{ fontSize: "12px", color: "var(--gray-500)", lineHeight: 1.5 }}>
-                  Следующий осмотр: <b style={{ color: "var(--gray-800)" }}>{obj.next_inspection || risk?.next_inspection || "не назначен"}</b>
-                </div>
+                <div style={{ fontSize: "12px", color: "var(--gray-500)", lineHeight: 1.5 }}>Следующий осмотр: <b style={{ color: "var(--gray-800)" }}>{obj.next_inspection || risk?.next_inspection || "не назначен"}</b></div>
               </div>
             </div>
 
@@ -271,7 +371,6 @@ export default function ObjectDetails() {
                 <InfoRow label="Значимость" value={significanceLabel[obj.significance] || obj.significance || "—"} />
                 <InfoRow label="Описание" value={obj.description || "—"} />
               </div>
-
               <div style={{ background: "white", borderRadius: "16px", padding: "18px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
                 <div style={{ fontSize: "12px", color: "var(--gray-400)", textTransform: "uppercase", letterSpacing: "0.7px", fontWeight: 800, marginBottom: "10px" }}>Технические параметры</div>
                 <InfoRow label="Общая длина" value={obj.length_km != null ? `${obj.length_km} км` : "—"} />
@@ -286,13 +385,25 @@ export default function ObjectDetails() {
             </div>
           </div>
 
+          {/* Risk Analytics */}
           <div style={{ background: "white", borderRadius: "var(--radius-xl)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "8px" }}>
               <div>
                 <h3 style={{ fontSize: "16px", color: "var(--gray-900)", margin: "0 0 4px", fontWeight: 800 }}>🧠 Аналитика риска</h3>
                 <p style={{ fontSize: "12px", color: "var(--gray-400)", margin: 0 }}>Прозрачные факторы, влияющие на приоритет осмотра и ремонта</p>
               </div>
-              <span style={{ background: recColor + "15", color: recColor, padding: "6px 12px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, border: `1px solid ${recColor}22` }}>{risk?.recommendation || "Рекомендация формируется"}</span>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ background: recColor + "15", color: recColor, padding: "6px 12px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, border: `1px solid ${recColor}22` }}>{risk?.recommendation || "Рекомендация формируется"}</span>
+                {/* ✅ Recompute Risk Button */}
+                <button
+                  onClick={handleRecomputeRisk}
+                  disabled={recomputingRisk}
+                  title="Пересчитать риск на основе актуальных данных"
+                  style={{ padding: "7px 14px", borderRadius: "8px", border: "1px solid #e0e7ff", background: recomputingRisk ? "#e0e7ff" : "#eef2ff", color: "#4338ca", fontWeight: 700, fontSize: "12px", cursor: recomputingRisk ? "default" : "pointer", display: "flex", alignItems: "center", gap: "5px", transition: "all .15s" }}
+                >
+                  {recomputingRisk ? "⏳" : "🔄"} Пересчитать
+                </button>
+              </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
@@ -305,7 +416,6 @@ export default function ObjectDetails() {
                   <StatPill label="Статус" value={conditionLabel[obj.condition] || obj.condition} color={conditionColor[obj.condition] || "#64748b"} />
                 </div>
               </div>
-
               <div style={{ background: "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)", borderRadius: "16px", border: "1px solid var(--gray-200)", padding: "18px" }}>
                 <div style={{ fontSize: "12px", color: "var(--gray-400)", textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.7px", marginBottom: "12px" }}>Риск-факторы</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -327,7 +437,9 @@ export default function ObjectDetails() {
           </div>
         </div>
 
+        {/* ── Right column ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Record status */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 12px", fontWeight: 700 }}>📌 Статус записи</h3>
             <InfoRow label="Источник" value={sourceLabel[obj.source] || obj.source || "—"} />
@@ -338,24 +450,35 @@ export default function ObjectDetails() {
             <InfoRow label="Обновлено" value={obj.updated_at ? new Date(obj.updated_at).toLocaleDateString() : "—"} />
           </div>
 
+          {/* Export — full catalog filtered or object-level */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
-            <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 12px", fontWeight: 700 }}>📥 Экспорт отчёта</h3>
+            <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 4px", fontWeight: 700 }}>📥 Экспорт отчёта</h3>
+            <p style={{ fontSize: "12px", color: "var(--gray-400)", margin: "0 0 12px" }}>Полный реестр с применением фильтров</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {[
-                { fmt: "csv", label: "Скачать CSV", icon: "📄", color: "#16a34a" },
+                { fmt: "csv",  label: "Скачать CSV",   icon: "📄", color: "#16a34a" },
                 { fmt: "xlsx", label: "Скачать Excel", icon: "📊", color: "#1d4ed8" },
-                { fmt: "pdf", label: "Скачать PDF", icon: "📃", color: "#dc2626" },
+                { fmt: "pdf",  label: "Скачать PDF",   icon: "📃", color: "#dc2626" },
               ].map(({ fmt, label, icon, color }) => (
-                <a key={fmt} href={`${BASE_URL}/api/reports/structures.${fmt}?id=${id}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "var(--radius-sm)", border: `1px solid ${color}30`, background: color + "08", color, fontWeight: 600, fontSize: "13px", textDecoration: "none" }}>
+                <a key={fmt} href={exportUrl(fmt)} target="_blank" rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "var(--radius-sm)", border: `1px solid ${color}30`, background: color + "08", color, fontWeight: 600, fontSize: "13px", textDecoration: "none" }}>
                   <span>{icon}</span> {label}
                 </a>
               ))}
             </div>
           </div>
 
+          {/* Inspection history */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
-            <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 16px", fontWeight: 700 }}>📋 История обследований</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: 0, fontWeight: 700 }}>📋 История обследований</h3>
+              <button onClick={() => setShowInspModal(true)}
+                style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #a5f3fc", background: "#ecfeff", color: "#0891b2", fontWeight: 700, fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>+ Добавить</button>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {(obj.inspections || []).length === 0 && (
+                <div style={{ textAlign: "center", padding: "24px", color: "var(--gray-400)", fontSize: "13px" }}>Осмотры не зарегистрированы</div>
+              )}
               {(obj.inspections || []).map((insp: Inspection, i: number) => (
                 <div key={i} style={{ background: "var(--gray-50)", borderRadius: "var(--radius-sm)", padding: "14px", border: "1px solid var(--gray-200)", borderLeft: `3px solid ${conditionColor[insp.condition] || '#94a3b8'}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", gap: "8px" }}>

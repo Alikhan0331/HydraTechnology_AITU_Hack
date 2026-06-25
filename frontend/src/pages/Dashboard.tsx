@@ -1,236 +1,227 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSummary, getTopRisk, getAnalyticsDynamics, getStructures } from "../api/structures";
-import StatCard from "../components/StatCard";
+import { getAnalyticsDashboard, getTopRisk } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
-import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area } from "recharts";
-import "leaflet/dist/leaflet.css";
 
-const FALLBACK_SUMMARY = { total: 438, by_condition: { good: 210, monitoring: 98, requires_repair: 87, emergency: 43 }, by_type: { "Канал": 260, "Шлюз": 80, "Плотина": 55, "Насосная станция": 43 } };
-const FALLBACK_TREND = [
-  { month: "Янв", исправных: 195, аварийных: 55 }, { month: "Фев", исправных: 200, аварийных: 50 },
-  { month: "Мар", исправных: 205, аварийных: 48 }, { month: "Апр", исправных: 208, аварийных: 46 },
-  { month: "Май", исправных: 210, аварийных: 44 }, { month: "Июн", исправных: 210, аварийных: 43 },
-];
-const FALLBACK_TOP_RISK = [
-  { id: 4, name: "Насосная станция №3", risk_level: "critical", condition: "emergency", district: "Байзакский" },
-  { id: 3, name: "Плотина Тасоткель", risk_level: "high", condition: "requires_repair", district: "Жуалынский" },
-  { id: 2, name: "Шлюз №12", risk_level: "medium", condition: "monitoring", district: "Меркенский" },
-];
-const FALLBACK_MAP: any[] = [
-  { id: 1, name: "Большой Чуйский канал", type: "Канал", district: "Жамбылский", condition: "good", risk_level: "low", risk_score: 28, wear_percent: 41, latitude: 42.85, longitude: 71.37, year_built: 1958, next_inspection: "2024-09-15" },
-  { id: 2, name: "Шлюз №12", type: "Шлюз", district: "Меркенский", condition: "monitoring", risk_level: "medium", risk_score: 51, wear_percent: 54, latitude: 42.91, longitude: 71.70, year_built: 1976, next_inspection: "2024-08-10" },
-  { id: 3, name: "Плотина Тасоткель", type: "Плотина", district: "Жуалынский", condition: "requires_repair", risk_level: "high", risk_score: 74, wear_percent: 68, latitude: 42.58, longitude: 72.10, year_built: 1964, next_inspection: "2024-02-20" },
-  { id: 4, name: "Насосная станция №3", type: "Насосная станция", district: "Байзакский", condition: "emergency", risk_level: "critical", risk_score: 89, wear_percent: 82, latitude: 42.75, longitude: 71.80, year_built: 1971, next_inspection: "2024-01-20" },
-  { id: 5, name: "Канал Арнасай", type: "Канал", district: "Таласский", condition: "monitoring", risk_level: "medium", risk_score: 47, wear_percent: 37, latitude: 42.52, longitude: 71.90, year_built: 1986, next_inspection: "2024-07-18" },
-];
+const RISK_COLORS: Record<string, string> = {
+  low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626",
+};
+const RISK_LABELS: Record<string, string> = {
+  low: "Низкий", medium: "Средний", high: "Высокий", critical: "Критический",
+};
 
-function normalizeSummary(data: any) {
-  let by_condition = data.by_condition;
-  let by_type = data.by_type;
-  if (Array.isArray(by_condition)) by_condition = Object.fromEntries(by_condition.map((i: any) => [i.code ?? i.condition ?? i.name_ru, i.count ?? i.value ?? 0]));
-  if (Array.isArray(by_type)) by_type = Object.fromEntries(by_type.map((i: any) => [i.name_ru ?? i.type ?? i.name, i.count ?? i.value ?? 0]));
-  return { ...data, by_condition, by_type };
-}
+const MOCK_DASH: any = {
+  total: 247, emergency: 12, requires_repair: 38, overall_condition_index: 64,
+  total_length_km: 1842.3, avg_age_years: 38.4,
+  by_condition: { good: 142, monitoring: 55, requires_repair: 38, emergency: 12 },
+  by_risk: { low: 130, medium: 72, high: 33, critical: 12 },
+  top_risk: [
+    { id: 1, name: "Плотина Тасоткель", type: "Плотина", district: "Жуалынский", condition: "emergency", risk_level: "critical", risk_score: 92 },
+    { id: 2, name: "Насосная ст. №3",   type: "Насосная станция", district: "Байзакский", condition: "emergency", risk_level: "critical", risk_score: 88 },
+    { id: 3, name: "Шлюз №7",           type: "Шлюз", district: "Меркенский", condition: "requires_repair", risk_level: "high", risk_score: 76 },
+    { id: 4, name: "Канал Арнасай",     type: "Канал", district: "Таласский", condition: "requires_repair", risk_level: "high", risk_score: 71 },
+    { id: 5, name: "Водозабор №2",      type: "Водозабор", district: "Жамбылский", condition: "monitoring", risk_level: "medium", risk_score: 58 },
+  ],
+  recently_added: [
+    { id: 10, name: "Канал Новый",     type: "Канал",  district: "Жамбылский", condition: "good", risk_level: "low" },
+    { id: 11, name: "Гидропост №22",   type: "Гидропост", district: "Байзакский", condition: "good", risk_level: "low" },
+  ],
+};
 
-const RISK_COLORS: Record<string, string> = { critical: "#dc2626", high: "#ea580c", medium: "#d97706", low: "#16a34a" };
-const RISK_LABELS: Record<string, string> = { critical: "Критический", high: "Высокий", medium: "Средний", low: "Низкий" };
+const TOP_RISK_LIMITS = [5, 10, 20, 50];
 
-function CompactPopup({ s, onOpen }: { s: any; onOpen: () => void }) {
-  const riskColor = RISK_COLORS[s.risk_level] ?? "#64748b";
-  const age = s.year_built ? 2026 - s.year_built : null;
+function StatCard({ icon, value, label, sub, color }: { icon: string; value: any; label: string; sub?: string; color: string }) {
   return (
-    <div style={{ fontFamily: "Inter, sans-serif", width: "230px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px", marginBottom: "8px" }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: "13px", color: "#1e293b", lineHeight: 1.3 }}>{s.name}</div>
-          <div style={{ color: "#94a3b8", fontSize: "11px", marginTop: "1px" }}>{s.type} · {s.district}</div>
-        </div>
-        <span style={{ fontSize: "10px", fontWeight: 700, color: riskColor, background: riskColor + "18", padding: "3px 7px", borderRadius: "999px", whiteSpace: "nowrap", border: `1px solid ${riskColor}30`, flexShrink: 0 }}>
-          {RISK_LABELS[s.risk_level] ?? s.risk_level}
-        </span>
+    <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px 22px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", display: "flex", gap: "14px", alignItems: "flex-start" }}>
+      <div style={{ width: 44, height: 44, borderRadius: "12px", background: color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>{icon}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: "24px", fontWeight: 900, color: "var(--gray-900)", fontFamily: "Manrope, sans-serif", lineHeight: 1.1 }}>{value}</div>
+        <div style={{ fontSize: "13px", color: "var(--gray-600)", fontWeight: 600, marginTop: 2 }}>{label}</div>
+        {sub && <div style={{ fontSize: "11px", color: color, fontWeight: 700, marginTop: 4, background: color + "12", padding: "2px 8px", borderRadius: 6, display: "inline-block" }}>{sub}</div>}
       </div>
-      <div style={{ marginBottom: "10px" }}>
-        <span style={{ color: conditionColor[s.condition] ?? "#64748b", fontWeight: 700, fontSize: "11px", background: (conditionColor[s.condition] ?? "#64748b") + "18", padding: "3px 9px", borderRadius: "10px", border: `1px solid ${(conditionColor[s.condition] ?? "#64748b")}30` }}>
-          {conditionLabel[s.condition] ?? s.condition}
-        </span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "10px" }}>
-        <div style={{ background: riskColor + "10", border: `1px solid ${riskColor}20`, borderRadius: "8px", padding: "7px 9px" }}>
-          <div style={{ fontSize: "9px", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "2px" }}>Риск</div>
-          <div style={{ fontSize: "18px", color: riskColor, fontWeight: 900, lineHeight: 1 }}>{s.risk_score ?? "—"}<span style={{ fontSize: "10px", color: "#94a3b8", fontWeight: 400 }}>/100</span></div>
-          {s.risk_score != null && <div style={{ height: 3, background: "#e2e8f0", borderRadius: 999, marginTop: 4 }}><div style={{ height: "100%", width: `${Math.min(s.risk_score, 100)}%`, background: riskColor, borderRadius: 999 }} /></div>}
-        </div>
-        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "7px 9px" }}>
-          <div style={{ fontSize: "9px", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "2px" }}>Износ</div>
-          <div style={{ fontSize: "18px", color: "#ea580c", fontWeight: 900, lineHeight: 1 }}>{s.wear_percent != null ? `${s.wear_percent}%` : "—"}</div>
-          {s.wear_percent != null && <div style={{ height: 3, background: "#e2e8f0", borderRadius: 999, marginTop: 4 }}><div style={{ height: "100%", width: `${Math.min(s.wear_percent, 100)}%`, background: "#ea580c", borderRadius: 999 }} /></div>}
-        </div>
-      </div>
-      <div style={{ background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0", padding: "8px 10px", marginBottom: "10px", display: "flex", flexDirection: "column", gap: "5px" }}>
-        {age !== null && <Row label="Год / Возраст" value={`${s.year_built} · ${age} л`} />}
-        {s.next_inspection && <Row label="След. осмотр" value={s.next_inspection} highlight />}
-      </div>
-      <button onClick={onOpen} style={{ background: "linear-gradient(135deg, #1d4ed8, #2563eb)", color: "white", border: "none", padding: "8px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: 700, width: "100%", boxShadow: "0 2px 6px rgba(37,99,235,0.3)" }}>
-        Открыть карточку →
-      </button>
     </div>
   );
 }
 
-function Row({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+function CondBar({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
+  const pct = total ? Math.round((count / total) * 100) : 0;
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <span style={{ fontSize: "11px", color: "#94a3b8" }}>{label}</span>
-      <span style={{ fontSize: "11px", fontWeight: 700, color: highlight ? "#16a34a" : "#0f172a", background: highlight ? "#dcfce7" : "transparent", padding: highlight ? "1px 6px" : undefined, borderRadius: highlight ? "6px" : undefined }}>{value}</span>
+    <div style={{ marginBottom: "10px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+        <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--gray-700)" }}>{label}</span>
+        <span style={{ fontSize: "12px", fontWeight: 700, color }}>{count} <span style={{ color: "var(--gray-400)", fontWeight: 400 }}>({pct}%)</span></span>
+      </div>
+      <div style={{ height: 8, background: "var(--gray-100)", borderRadius: 999, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 999, transition: "width .4s ease" }} />
+      </div>
     </div>
   );
 }
 
 export default function Dashboard() {
-  const [summary, setSummary] = useState<any>(FALLBACK_SUMMARY);
-  const [trend, setTrend] = useState<any[]>(FALLBACK_TREND);
-  const [topRisk, setTopRisk] = useState<any[]>(FALLBACK_TOP_RISK);
-  const [mapStructures, setMapStructures] = useState<any[]>(FALLBACK_MAP);
+  const [data, setData] = useState<any>(MOCK_DASH);
+  const [topRiskLimit, setTopRiskLimit] = useState(10);
+  const [topRiskList, setTopRiskList] = useState<any[]>(MOCK_DASH.top_risk);
+  const [loadingTopRisk, setLoadingTopRisk] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    getSummary().then((r) => { if (r.data?.total) setSummary(normalizeSummary(r.data)); }).catch(() => {});
-    getAnalyticsDynamics().then((r) => { if (Array.isArray(r.data) && r.data.length > 0) setTrend(r.data); }).catch(() => {});
-    getTopRisk().then((r) => { if (Array.isArray(r.data) && r.data.length > 0) setTopRisk(r.data); }).catch(() => {});
-    getStructures({ limit: "2000" }).then((r) => { if (Array.isArray(r.data) && r.data.length > 0) setMapStructures(r.data); }).catch(() => {});
+    getAnalyticsDashboard().then(res => { if (res.data) setData(res.data); }).catch(() => {});
   }, []);
 
-  const condIcons: Record<string, string> = { good: "✅", monitoring: "👁️", requires_repair: "🔧", emergency: "🚨" };
-  const pieData = Object.entries(summary.by_condition).map(([key, val]) => ({ name: conditionLabel[key] ?? key, value: val as number, color: conditionColor[key] ?? "#888" }));
-  const barData = Object.entries(summary.by_type).map(([type, count]) => ({ name: type, Количество: count as number }));
-  const tooltipStyle = { background: "white", border: "1px solid var(--gray-200)", borderRadius: "10px", color: "var(--gray-800)", boxShadow: "var(--shadow-md)", fontSize: "13px" };
+  // ✅ Re-fetch top-risk when limit changes
+  useEffect(() => {
+    setLoadingTopRisk(true);
+    getTopRisk(topRiskLimit)
+      .then(res => { if (Array.isArray(res.data)) setTopRiskList(res.data); })
+      .catch(() => {})
+      .finally(() => setLoadingTopRisk(false));
+  }, [topRiskLimit]);
+
+  const total = data?.total || 0;
+  const byCondition = data?.by_condition || {};
+  const byRisk = data?.by_risk || {};
+  const condIndex = data?.overall_condition_index ?? 64;
+  const condColor = condIndex >= 75 ? "#16a34a" : condIndex >= 50 ? "#d97706" : "#dc2626";
 
   return (
-    <div style={{ padding: "32px", background: "var(--gray-50)", minHeight: "100vh" }}>
-      <div style={{ marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+    <div style={{ padding: "28px 24px", background: "var(--gray-50)", minHeight: "100vh", boxSizing: "border-box" }}>
+      {/* Header */}
+      <div style={{ marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "12px" }}>
         <div>
-          <h1 style={{ fontSize: "24px", color: "var(--gray-900)", marginBottom: "4px" }}>Дашборд</h1>
-          <p style={{ color: "var(--gray-500)", fontSize: "13px" }}>Гидросооружения Жамбылского региона</p>
+          <h1 style={{ fontSize: "24px", fontWeight: 900, color: "var(--gray-900)", margin: "0 0 4px", fontFamily: "Manrope, sans-serif" }}>Главная панель</h1>
+          <p style={{ color: "var(--gray-500)", fontSize: "13px", margin: 0 }}>Мониторинг гидротехнических сооружений Жамбылской области</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "white", padding: "8px 16px", borderRadius: "10px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#16a34a", boxShadow: "0 0 6px #16a34a" }} />
-          <span style={{ fontSize: "13px", color: "var(--gray-600)", fontWeight: 500 }}>Онлайн</span>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button onClick={() => navigate("/catalog")} style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--gray-200)", background: "white", color: "var(--gray-700)", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>📋 Каталог</button>
+          <button onClick={() => navigate("/analytics")} style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "none", background: "#1d4ed8", color: "white", fontWeight: 700, fontSize: "13px", cursor: "pointer" }}>📊 Аналитика</button>
         </div>
       </div>
-      <div style={{ background: "linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 100%)", borderRadius: "var(--radius-xl)", padding: "28px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "var(--shadow-blue)", marginBottom: "24px" }}>
-        <div>
-          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "12px", fontWeight: 600, letterSpacing: "1.2px", textTransform: "uppercase", marginBottom: "6px" }}>Всего объектов</p>
-          <div style={{ color: "white", fontSize: "52px", fontFamily: "Manrope, sans-serif", fontWeight: 900, lineHeight: 1 }}>{summary.total}</div>
-          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px", marginTop: "6px" }}>Гидросооружений под наблюдением</p>
+
+      {/* KPI cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "14px", marginBottom: "20px" }}>
+        <StatCard icon="🏗️" value={total} label="Всего объектов" color="#2563eb" />
+        <StatCard icon="🚨" value={data?.emergency ?? 0} label="Аварийных" sub={total ? `${Math.round(((data?.emergency ?? 0) / total) * 100)}%` : undefined} color="#dc2626" />
+        <StatCard icon="🔧" value={data?.requires_repair ?? 0} label="Требуют ремонта" color="#ea580c" />
+        <StatCard icon="📏" value={`${data?.total_length_km ?? 0} км`} label="Общая протяжённость" color="#0891b2" />
+        <StatCard icon="📅" value={`${data?.avg_age_years ?? 0} лет`} label="Средний возраст" color="#7c3aed" />
+        <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px 22px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div style={{ fontSize: "11px", color: "var(--gray-400)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.6px", marginBottom: "6px" }}>Индекс состояния</div>
+          <div style={{ fontSize: "28px", fontWeight: 900, color: condColor, fontFamily: "Manrope, sans-serif", lineHeight: 1 }}>{condIndex}<span style={{ fontSize: "14px", fontWeight: 500, color: "var(--gray-400)" }}>/100</span></div>
+          <div style={{ height: 6, background: "var(--gray-100)", borderRadius: 999, overflow: "hidden", marginTop: "8px" }}>
+            <div style={{ height: "100%", width: `${condIndex}%`, background: condColor, borderRadius: 999 }} />
+          </div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          {Object.entries(summary.by_condition).map(([key, val]) => (
-            <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px", marginBottom: "6px" }}>
-              <span style={{ color: "rgba(255,255,255,0.8)", fontSize: "13px" }}>{conditionLabel[key] ?? key}</span>
-              <span style={{ color: "white", fontWeight: 700, fontSize: "15px", minWidth: "32px", textAlign: "right" }}>{val as number}</span>
-            </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+        {/* Condition breakdown */}
+        <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
+          <h3 style={{ fontSize: "14px", fontWeight: 800, color: "var(--gray-900)", margin: "0 0 16px" }}>📊 Состояние объектов</h3>
+          <CondBar label="Норма" count={byCondition.good ?? 0} total={total} color="#16a34a" />
+          <CondBar label="Наблюдение" count={byCondition.monitoring ?? 0} total={total} color="#d97706" />
+          <CondBar label="Требует ремонта" count={byCondition.requires_repair ?? 0} total={total} color="#ea580c" />
+          <CondBar label="Аварийное" count={byCondition.emergency ?? 0} total={total} color="#dc2626" />
+        </div>
+
+        {/* Risk breakdown */}
+        <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
+          <h3 style={{ fontSize: "14px", fontWeight: 800, color: "var(--gray-900)", margin: "0 0 16px" }}>⚠️ Распределение рисков</h3>
+          {Object.entries(byRisk).map(([lvl, cnt]: any) => (
+            <CondBar key={lvl} label={RISK_LABELS[lvl] ?? lvl} count={cnt} total={total} color={RISK_COLORS[lvl] ?? "#64748b"} />
           ))}
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "16px", marginBottom: "24px" }}>
-        {Object.entries(summary.by_condition).map(([key, val]) => (
-          <StatCard key={key} title={conditionLabel[key] ?? key} value={val as number} color={conditionColor[key] ?? "#888"} icon={condIcons[key]} />
-        ))}
-      </div>
-      <div style={{ background: "white", borderRadius: "var(--radius-xl)", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", overflow: "hidden", marginBottom: "24px" }}>
-        <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--gray-100)" }}>
+
+      {/* Top Risk Table — with limit selector ✅ */}
+      <div style={{ background: "white", borderRadius: "var(--radius-lg)", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", marginBottom: "20px", overflow: "hidden" }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--gray-100)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--gray-900)" }}>🗺️ Карта объектов</div>
-            <div style={{ fontSize: "12px", color: "var(--gray-400)", marginTop: "2px" }}>Геовизуализация гидротехнических сооружений региона</div>
+            <h3 style={{ fontSize: "14px", fontWeight: 800, color: "var(--gray-900)", margin: 0 }}>🚨 Приоритет осмотра</h3>
+            <p style={{ fontSize: "12px", color: "var(--gray-400)", margin: "3px 0 0" }}>Объекты с наибольшим риском — требуют немедленного внимания</p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {Object.entries(conditionColor).map(([key, color]) => (
-                <div key={key} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <div style={{ width: 9, height: 9, borderRadius: "50%", background: color }} />
-                  <span style={{ fontSize: "11px", color: "var(--gray-500)" }}>{conditionLabel[key]}</span>
-                </div>
+          {/* ✅ Limit selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "12px", color: "var(--gray-500)", fontWeight: 600 }}>Показать:</span>
+            <div style={{ display: "flex", gap: "4px" }}>
+              {TOP_RISK_LIMITS.map(lim => (
+                <button key={lim} onClick={() => setTopRiskLimit(lim)}
+                  style={{ padding: "5px 12px", borderRadius: "6px", border: topRiskLimit === lim ? "1px solid #1d4ed8" : "1px solid var(--gray-200)", background: topRiskLimit === lim ? "#1d4ed8" : "white", color: topRiskLimit === lim ? "white" : "var(--gray-600)", fontWeight: topRiskLimit === lim ? 700 : 500, fontSize: "12px", cursor: "pointer", transition: "all .15s" }}>
+                  {lim}
+                </button>
               ))}
             </div>
-            <div style={{ width: 1, height: 18, background: "var(--gray-200)" }} />
-            <span style={{ fontSize: "12px", color: "var(--primary)", fontWeight: 600, background: "var(--primary-bg)", padding: "4px 12px", borderRadius: "12px", border: "1px solid #bfdbfe" }}>{mapStructures.length} объектов</span>
+            {loadingTopRisk && <span style={{ fontSize: "12px", color: "var(--gray-400)" }}>⏳</span>}
           </div>
         </div>
-        <div style={{ height: "340px" }}>
-          <MapContainer center={[42.85, 71.37]} zoom={8} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
-            {mapStructures.map((s) => (
-              <CircleMarker key={s.id} center={[s.latitude, s.longitude]} radius={9} fillColor={conditionColor[s.condition] ?? "#94a3b8"} color="white" weight={2} fillOpacity={0.9}>
-                <Popup maxWidth={260} minWidth={240}>
-                  <CompactPopup s={s} onOpen={() => navigate(`/object/${s.id}`)} />
-                </Popup>
-              </CircleMarker>
-            ))}
-          </MapContainer>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "var(--gray-50)" }}>
+                {["#", "Объект", "Тип", "Район", "Состояние", "Риск", "Score", ""].map((h, i) => (
+                  <th key={i} style={{ padding: "10px 14px", textAlign: i === 7 ? "right" : "left", fontSize: "11px", fontWeight: 700, color: "var(--gray-500)", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {topRiskList.map((s: any, i: number) => (
+                <tr key={s.id} style={{ borderTop: "1px solid var(--gray-100)", cursor: "pointer" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = "var(--gray-50)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = "white"}
+                  onClick={() => navigate(`/object/${s.id}`)}
+                >
+                  <td style={{ padding: "12px 14px", fontSize: "12px", color: "var(--gray-400)", fontWeight: 700 }}>{i + 1}</td>
+                  <td style={{ padding: "12px 14px", fontWeight: 700, color: "var(--gray-800)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</td>
+                  <td style={{ padding: "12px 14px" }}><span style={{ background: "var(--gray-100)", color: "var(--gray-600)", padding: "3px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: 600 }}>{s.type}</span></td>
+                  <td style={{ padding: "12px 14px", fontSize: "12px", color: "var(--gray-500)" }}>{s.district}</td>
+                  <td style={{ padding: "12px 14px" }}><span style={{ background: conditionColor[s.condition] + "18", color: conditionColor[s.condition], padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700 }}>{conditionLabel[s.condition]}</span></td>
+                  <td style={{ padding: "12px 14px" }}><span style={{ color: RISK_COLORS[s.risk_level], fontWeight: 700, fontSize: "12px", background: RISK_COLORS[s.risk_level] + "15", padding: "3px 8px", borderRadius: "20px" }}>{RISK_LABELS[s.risk_level]}</span></td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{ width: 48, height: 5, background: "var(--gray-100)", borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${Math.min(s.risk_score ?? 0, 100)}%`, background: RISK_COLORS[s.risk_level] ?? "#64748b", borderRadius: 999 }} />
+                      </div>
+                      <span style={{ fontSize: "12px", fontWeight: 700, color: RISK_COLORS[s.risk_level] }}>{s.risk_score ?? "—"}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 14px", textAlign: "right" }}>
+                    <button onClick={e => { e.stopPropagation(); navigate(`/object/${s.id}`); }}
+                      style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", fontWeight: 700, fontSize: "11px", cursor: "pointer" }}>Открыть →</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+        {topRiskList.length === 0 && !loadingTopRisk && (
+          <div style={{ padding: "32px", textAlign: "center", color: "var(--gray-400)", fontSize: "13px" }}>Нет данных</div>
+        )}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
-        <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
-          <h3 style={{ fontSize: "15px", color: "var(--gray-900)", marginBottom: "3px" }}>Распределение по состоянию</h3>
-          <p style={{ fontSize: "12px", color: "var(--gray-400)", marginBottom: "16px" }}>Доля объектов каждой категории</p>
-          <ResponsiveContainer width="100%" height={200}><PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value">{pieData.map((entry, i) => <Cell key={i} fill={entry.color} strokeWidth={0} />)}</Pie><Tooltip contentStyle={tooltipStyle} /></PieChart></ResponsiveContainer>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "8px" }}>
-            {pieData.map((d, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}><div style={{ width: 10, height: 10, borderRadius: "3px", background: d.color }} /><span style={{ color: "var(--gray-500)", fontSize: "12px" }}>{d.name}: <b style={{ color: "var(--gray-700)" }}>{d.value}</b></span></div>))}
+
+      {/* Recently added */}
+      {(data?.recently_added || []).length > 0 && (
+        <div style={{ background: "white", borderRadius: "var(--radius-lg)", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
+          <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--gray-100)" }}>
+            <h3 style={{ fontSize: "14px", fontWeight: 800, color: "var(--gray-900)", margin: 0 }}>🆕 Последние добавленные</h3>
           </div>
-        </div>
-        <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
-          <h3 style={{ fontSize: "15px", color: "var(--gray-900)", marginBottom: "3px" }}>По типам объектов</h3>
-          <p style={{ fontSize: "12px", color: "var(--gray-400)", marginBottom: "16px" }}>Количество по каждому типу</p>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={barData} margin={{ left: -20, right: 0, top: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--gray-100)" />
-              <XAxis dataKey="name" tick={{ fill: "var(--gray-400)", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "var(--gray-400)", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--gray-50)" }} />
-              <Bar dataKey="Количество" fill="#1d4ed8" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-        <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
-          <h3 style={{ fontSize: "15px", color: "var(--gray-900)", marginBottom: "3px" }}>Динамика состояния</h3>
-          <p style={{ fontSize: "12px", color: "var(--gray-400)", marginBottom: "16px" }}>Тренд за 6 месяцев</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={trend} margin={{ left: -20, right: 0, top: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="cG" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#16a34a" stopOpacity={0.15} /><stop offset="95%" stopColor="#16a34a" stopOpacity={0} /></linearGradient>
-                <linearGradient id="cB" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#dc2626" stopOpacity={0.15} /><stop offset="95%" stopColor="#dc2626" stopOpacity={0} /></linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--gray-100)" />
-              <XAxis dataKey="month" tick={{ fill: "var(--gray-400)", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "var(--gray-400)", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Area type="monotone" dataKey="исправных" stroke="#16a34a" strokeWidth={2} fill="url(#cG)" />
-              <Area type="monotone" dataKey="аварийных" stroke="#dc2626" strokeWidth={2} fill="url(#cB)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
-          <h3 style={{ fontSize: "15px", color: "var(--gray-900)", marginBottom: "3px" }}>🚨 Топ рисковых объектов</h3>
-          <p style={{ fontSize: "12px", color: "var(--gray-400)", marginBottom: "16px" }}>Требуют немедленного внимания</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {topRisk.map((obj: any, i: number) => (
-              <div key={i} onClick={() => navigate(`/object/${obj.id}`)}
-                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: "var(--gray-50)", borderRadius: "var(--radius-sm)", border: "1px solid var(--gray-200)", borderLeft: `3px solid ${RISK_COLORS[obj.risk_level] || "#888"}`, cursor: "pointer" }}>
-                <div style={{ width: 32, height: 32, borderRadius: "8px", background: (RISK_COLORS[obj.risk_level] || "#888") + "18", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: RISK_COLORS[obj.risk_level], fontSize: "13px", flexShrink: 0 }}>{i + 1}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, color: "var(--gray-800)", fontSize: "13px" }}>{obj.name}</div>
-                  <div style={{ color: "var(--gray-400)", fontSize: "11px" }}>{obj.district}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px", padding: "16px" }}>
+            {(data?.recently_added || []).map((s: any) => (
+              <div key={s.id} onClick={() => navigate(`/object/${s.id}`)}
+                style={{ background: "var(--gray-50)", borderRadius: "10px", padding: "14px", border: "1px solid var(--gray-200)", cursor: "pointer", transition: "box-shadow .15s" }}
+                onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--shadow-md)"}
+                onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = "none"}
+              >
+                <div style={{ fontSize: "12px", color: "var(--gray-500)", marginBottom: "4px" }}>{s.type} · {s.district}</div>
+                <div style={{ fontWeight: 700, color: "var(--gray-800)", fontSize: "13px", marginBottom: "8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <span style={{ background: conditionColor[s.condition] + "18", color: conditionColor[s.condition], padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 700 }}>{conditionLabel[s.condition]}</span>
+                  <span style={{ background: RISK_COLORS[s.risk_level] + "15", color: RISK_COLORS[s.risk_level], padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 700 }}>{RISK_LABELS[s.risk_level]}</span>
                 </div>
-                <span style={{ fontSize: "11px", fontWeight: 700, color: RISK_COLORS[obj.risk_level], background: (RISK_COLORS[obj.risk_level] || "#888") + "18", padding: "3px 10px", borderRadius: "10px" }}>{RISK_LABELS[obj.risk_level] || obj.risk_level}</span>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
