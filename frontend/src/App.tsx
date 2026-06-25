@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Catalog from "./pages/Catalog";
 import MapPage from "./pages/MapPage";
 import ObjectDetails from "./pages/ObjectDetails";
+import Detection from "./pages/Detection";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/object/:id" element={<ObjectDetails />} />
+            <Route path="/detection" element={<Detection />} />
           </Routes>
         </div>
       </div>

@@ -4,6 +4,7 @@ const links = [
   { to: "/", label: "Дашборд", icon: "📊", desc: "Обзор системы" },
   { to: "/catalog", label: "Каталог", icon: "📋", desc: "Все объекты" },
   { to: "/map", label: "Карта", icon: "🗺️", desc: "Геовизуализация" },
+  { to: "/detection", label: "Обнаружение", icon: "🔍", desc: "Поиск по координатам" },
 ];
 
 export default function Sidebar() {
@@ -33,35 +34,32 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Nav label */}
       <div style={{ padding: "20px 20px 8px" }}>
         <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--gray-400)", letterSpacing: "1.2px", textTransform: "uppercase" }}>Навигация</span>
       </div>
 
-      {/* Nav links */}
       <nav style={{ padding: "0 12px", flex: 1 }}>
         {links.map((link) => {
           const active = location.pathname === link.to;
           return (
             <Link key={link.to} to={link.to} style={{ textDecoration: "none", display: "block", marginBottom: "4px" }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: "12px",
-                padding: "11px 14px", borderRadius: "var(--radius-md)",
-                background: active ? "var(--primary-bg)" : "transparent",
-                border: active ? "1px solid #bfdbfe" : "1px solid transparent",
-                color: active ? "var(--primary)" : "var(--gray-600)",
-                fontWeight: active ? 600 : 400,
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "var(--gray-50)"; }}
-              onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+              <div
+                style={{
+                  display: "flex", alignItems: "center", gap: "12px",
+                  padding: "11px 14px", borderRadius: "var(--radius-md)",
+                  background: active ? "var(--primary-bg)" : "transparent",
+                  border: active ? "1px solid #bfdbfe" : "1px solid transparent",
+                  color: active ? "var(--primary)" : "var(--gray-600)",
+                  fontWeight: active ? 600 : 400, cursor: "pointer",
+                }}
+                onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "var(--gray-50)"; }}
+                onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
               >
                 <span style={{
                   width: 36, height: 36, borderRadius: "9px",
                   background: active ? "white" : "var(--gray-100)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "17px", boxShadow: active ? "var(--shadow-sm)" : "none",
-                  flexShrink: 0
+                  fontSize: "17px", boxShadow: active ? "var(--shadow-sm)" : "none", flexShrink: 0
                 }}>{link.icon}</span>
                 <div>
                   <div style={{ fontSize: "14px" }}>{link.label}</div>
@@ -73,7 +71,6 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Bottom badge */}
       <div style={{ margin: "12px", padding: "14px", borderRadius: "var(--radius-md)", background: "var(--primary-bg)", border: "1px solid #bfdbfe" }}>
         <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--primary)", marginBottom: "2px" }}>AITU Hackday 2026</div>
         <div style={{ fontSize: "11px", color: "var(--gray-400)" }}>Industry 4.0 · Team HydraTech</div>
