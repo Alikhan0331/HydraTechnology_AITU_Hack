@@ -21,6 +21,26 @@ from ..models import (
 )
 from .generate import build_all
 
+# Inspection note templates per condition (shown on the object card).
+_NOTES = {
+    "good": [
+        "Плановый осмотр. Нарушений не выявлено.",
+        "Состояние удовлетворительное, замечаний нет.",
+    ],
+    "monitoring": [
+        "Мелкие трещины в облицовке. Рекомендован периодический контроль.",
+        "Локальный износ элементов, требуется наблюдение.",
+    ],
+    "requires_repair": [
+        "Повреждения облицовки, снижена пропускная способность. Требуется ремонт.",
+        "Износ несущих элементов сооружения. Рекомендован ремонт.",
+    ],
+    "emergency": [
+        "Критические дефекты конструкции. Требуется внеплановый ремонт.",
+        "Аварийное состояние тела сооружения/затвора. Ограничить эксплуатацию.",
+    ],
+}
+
 
 def _seed_catalogs(db):
     if not db.scalar(select(func.count()).select_from(StructureType)):
@@ -68,10 +88,24 @@ def _seed_structures(db):
                 ]),
                 condition_found=obj.condition,
                 wear_found=obj.wear_percent,
-                notes="Плановое обследование технического состояния.",
+                notes=rng.choice(_NOTES.get(obj.condition, ["Плановое обследование."])),
             ))
     db.commit()
     return len(rows)
+
+
+def ensure_seeded():
+    """Seed catalogs + structures if the DB is empty. Called on app startup so
+    teammates only need to run `uvicorn` — data appears automatically."""
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        _seed_catalogs(db)
+        if not db.scalar(select(func.count()).select_from(HydraulicStructure)):
+            n = _seed_structures(db)
+            print(f"[startup] seeded empty DB with {n} structures")
+    finally:
+        db.close()
 
 
 def main():

@@ -11,9 +11,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import Base, engine
 from .routers import analytics, meta, structures
+from .seed.seed import ensure_seeded
 
-# Create tables on startup (no migrations needed for the hackathon scope).
+# Create tables and auto-seed an empty DB so the app is demo-ready on first run.
 Base.metadata.create_all(bind=engine)
+ensure_seeded()
 
 app = FastAPI(
     title=settings.app_name,

@@ -47,12 +47,22 @@ def map_data(
     )
 
 
-@router.get("/{structure_id}", response_model=schemas.StructureRead)
+@router.get("/{structure_id}", response_model=schemas.StructureDetail)
 def get_structure(structure_id: int, db: Session = Depends(get_db)):
     obj = crud.get_structure(db, structure_id)
     if not obj:
         raise HTTPException(404, "Structure not found")
-    return obj
+    # Build base fields from the ORM object, then attach inspection history in
+    # the exact shape the object card expects (mapping notes→result, etc.).
+    base = schemas.StructureRead.model_validate(obj).model_dump()
+    inspections = [
+        schemas.InspectionPublic(
+            date=i.date, inspector=i.inspector,
+            result=i.notes, condition=i.condition_found,
+        )
+        for i in sorted(obj.inspections, key=lambda x: x.date, reverse=True)
+    ]
+    return schemas.StructureDetail(**base, inspections=inspections)
 
 
 @router.post("", response_model=schemas.StructureRead, status_code=201)

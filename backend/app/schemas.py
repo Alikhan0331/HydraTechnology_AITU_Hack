@@ -91,6 +91,19 @@ class StructureRead(BaseModel):
     updated_at: datetime | None = None
 
 
+class InspectionPublic(BaseModel):
+    """Inspection shape consumed by the object card (frontend ObjectDetails)."""
+    date: date
+    inspector: str | None = None
+    result: str | None = None      # mapped from Inspection.notes
+    condition: str | None = None   # mapped from Inspection.condition_found
+
+
+class StructureDetail(StructureRead):
+    """Full object card: structure + its inspection history."""
+    inspections: list[InspectionPublic] = []
+
+
 class StructureMapItem(BaseModel):
     """Lightweight payload for the map (one record per marker)."""
     model_config = ConfigDict(from_attributes=True)
