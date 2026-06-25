@@ -6,11 +6,11 @@ import {
 } from "recharts";
 import { getAnalyticsCharts, getAnalyticsDynamics, getTopRisk } from "../api/structures";
 import type { Structure } from "../api/structures";
-import { conditionColor, conditionLabel } from "../utils/conditionColors";
 import PriorityRanking from "../components/PriorityRanking";
 
 const RISK_COLORS: Record<string, string> = {
   low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626",
+  "Низкий": "#16a34a", "Средний": "#eab308", "Высокий": "#ea580c", "Критический": "#dc2626",
 };
 const RISK_LABELS: Record<string, string> = {
   low: "Низкий", medium: "Средний", high: "Высокий", critical: "Критический",
@@ -154,7 +154,7 @@ export default function Analytics() {
       {/* Row 3: Top-10 risk table */}
       {topRisk.length > 0 && card(
         <>
-          {sectionTitle("ТОП-10 объектов по риску", "Наиболее проблемные объекты — требуют приоритетного внимания")}
+          {sectionTitle("ТОП рисковых объектов", "Экспертная risk-модель · наиболее проблемные объекты региона")}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {topRisk.map((s: any, i) => (
               <div key={s.id}
@@ -174,8 +174,8 @@ export default function Analytics() {
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px", flexShrink: 0 }}>
-                  <span style={{ fontWeight: 700, fontSize: "14px", color: RISK_COLORS[s.risk_level] ?? "#64748b" }}>{s.risk_score?.toFixed(1) ?? "—"}</span>
-                  <span style={{ fontSize: "11px", color: conditionColor[s.condition], fontWeight: 600 }}>{conditionLabel[s.condition] ?? s.condition}</span>
+                  <span style={{ fontWeight: 700, fontSize: "14px", color: RISK_COLORS[s.risk_level] ?? "#64748b" }}>{s.risk_score ?? "—"}</span>
+                  <span style={{ fontSize: "11px", color: RISK_COLORS[s.risk_level] ?? "#64748b", fontWeight: 600 }}>{s.risk_level}</span>
                 </div>
                 <span style={{ color: "var(--gray-300)", fontSize: "14px" }}>›</span>
               </div>

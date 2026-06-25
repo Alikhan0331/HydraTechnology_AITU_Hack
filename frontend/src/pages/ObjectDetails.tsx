@@ -12,6 +12,7 @@ import type { ForecastData } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
 import OperationHistory from "../components/OperationHistory";
 import InspectionPriority from "../components/InspectionPriority";
+import RiskScoreCard from "../components/RiskScoreCard";
 
 const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
 
@@ -607,6 +608,7 @@ export default function ObjectDetails() {
               ))}
             </div>
           </div>
+          <RiskScoreCard structureId={Number(id)} />
           <InspectionPriority structureId={Number(id)} />
           <OperationHistory structureId={Number(id)} />
         </div>
