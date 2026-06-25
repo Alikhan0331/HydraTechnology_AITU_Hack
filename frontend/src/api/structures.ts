@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE = "http://localhost:8000/api";
+const BASE = ((import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000") + "/api";
 
 export interface Structure {
   id: number;
@@ -34,8 +34,8 @@ export const getAnalyticsCharts = () =>
 export const getAnalyticsDynamics = () =>
   axios.get(`${BASE}/analytics/dynamics`);
 
-export const getTopRisk = () =>
-  axios.get(`${BASE}/analytics/top-risk`);
+export const getTopRisk = (limit = 10) =>
+  axios.get(`${BASE}/analytics/top-risk`, { params: { limit } });
 
 export const getStructureRisk = (id: number) =>
   axios.get(`${BASE}/structures/${id}/risk`);
