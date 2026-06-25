@@ -91,9 +91,12 @@ def create_structure(db: Session, data: schemas.StructureCreate):
         wear_fraction=wear_fraction,
         last_inspection=data.last_inspection,
         significance=data.significance,
+        type_code=code,
     )
     risk_level = data.risk_level or risk["risk_level"]
-    nxt = risk_engine.next_inspection_date(data.last_inspection, risk["interval_days"])
+    nxt = risk_engine.next_inspection_date(
+        data.last_inspection, risk["interval_days"], code
+    )
 
     obj = models.HydraulicStructure(
         name=data.name, type=ru_name, type_code=code, district=data.district,
@@ -131,13 +134,13 @@ def update_structure(db: Session, structure_id: int, data: schemas.StructureUpda
             wear_fraction=(obj.wear_percent / 100) if obj.wear_percent else None,
             eff_design=obj.efficiency_design,
             eff_actual=obj.efficiency_actual, last_inspection=obj.last_inspection,
-            significance=obj.significance,
+            significance=obj.significance, type_code=obj.type_code,
         )
         if "risk_level" not in payload:
             obj.risk_level = risk["risk_level"]
         obj.risk_score = risk["score"]
         obj.next_inspection = risk_engine.next_inspection_date(
-            obj.last_inspection, risk["interval_days"]
+            obj.last_inspection, risk["interval_days"], obj.type_code
         )
         db.commit()
         _log_risk(db, obj, risk)
@@ -162,12 +165,12 @@ def recompute_risk(db: Session, obj: models.HydraulicStructure):
         wear_fraction=(obj.wear_percent / 100) if obj.wear_percent else None,
         eff_design=obj.efficiency_design,
         eff_actual=obj.efficiency_actual, last_inspection=obj.last_inspection,
-        significance=obj.significance,
+        significance=obj.significance, type_code=obj.type_code,
     )
     obj.risk_level = risk["risk_level"]
     obj.risk_score = risk["score"]
     obj.next_inspection = risk_engine.next_inspection_date(
-        obj.last_inspection, risk["interval_days"]
+        obj.last_inspection, risk["interval_days"], obj.type_code
     )
     db.commit()
     _log_risk(db, obj, risk)

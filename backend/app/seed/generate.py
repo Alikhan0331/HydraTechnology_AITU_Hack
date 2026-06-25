@@ -64,9 +64,9 @@ def _assemble(*, idx, name, type_code, district, year_built, length_km,
     risk = compute_risk(
         year_built=year_built, condition=condition, wear_fraction=wear_fraction,
         eff_design=eff_design, eff_actual=eff_actual, last_inspection=last_insp,
-        significance=significance,
+        significance=significance, type_code=type_code,
     )
-    nxt = next_inspection_date(last_insp, risk["interval_days"])
+    nxt = next_inspection_date(last_insp, risk["interval_days"], type_code)
 
     return {
         "name": name, "type": ru_name, "type_code": type_code, "district": district,

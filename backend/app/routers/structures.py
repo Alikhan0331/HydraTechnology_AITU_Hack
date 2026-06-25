@@ -96,7 +96,7 @@ def get_risk(structure_id: int, db: Session = Depends(get_db)):
         wear_fraction=(obj.wear_percent / 100) if obj.wear_percent else None,
         eff_design=obj.efficiency_design,
         eff_actual=obj.efficiency_actual, last_inspection=obj.last_inspection,
-        significance=obj.significance,
+        significance=obj.significance, type_code=obj.type_code,
     )
     return schemas.RiskAssessmentRead(
         risk_level=risk["risk_level"], score=risk["score"],

@@ -32,6 +32,14 @@ BASE_INTERVAL_DAYS = {
     RiskLevel.CRITICAL.value: 30,
 }
 
+# Seasonal factor (TZ task 5): water-retaining / flow-control structures are most
+# stressed by the spring snowmelt flood (паводок), so they are inspected more
+# often and an inspection is scheduled BEFORE the flood season.
+FLOOD_SENSITIVE_TYPES = {"dam", "dike", "sluice", "water_intake"}
+SEASONAL_INTERVAL_MULT = 0.8          # inspect ~20% more often
+FLOOD_SEASON_START = (3, 1)           # 1 March — start of spring flood
+PRE_FLOOD_INSPECTION = (2, 20)        # target a check before 20 February
+
 
 def _clamp01(x: float) -> float:
     return max(0.0, min(1.0, x))
@@ -46,6 +54,7 @@ def compute_risk(
     eff_actual: float | None = None,
     last_inspection: date | None = None,
     significance: str | None = "local",
+    type_code: str | None = None,
 ) -> dict:
     age = (CURRENT_YEAR - year_built) if year_built else 35
 
@@ -94,6 +103,13 @@ def compute_risk(
     else:
         level = RiskLevel.CRITICAL.value
 
+    # Inspection interval (TZ task 5): base by risk level, shortened seasonally
+    # for flood-sensitive structures.
+    flood_sensitive = type_code in FLOOD_SENSITIVE_TYPES
+    interval_days = BASE_INTERVAL_DAYS[level]
+    if flood_sensitive:
+        interval_days = round(interval_days * SEASONAL_INTERVAL_MULT)
+
     factors = {
         "age_years": age,
         "age_factor": round(age_f, 2),
@@ -101,6 +117,13 @@ def compute_risk(
         "wear_factor": round(wear_f, 2),
         "efficiency_factor": round(eff_f, 2),
         "inspection_factor": round(insp_f, 2),
+        "seasonal": {
+            "flood_sensitive": flood_sensitive,
+            "interval_days": interval_days,
+            "note": ("Объект чувствителен к весеннему паводку — осмотр чаще и до "
+                     "начала половодья." if flood_sensitive
+                     else "Сезонная корректировка не требуется."),
+        },
         "weights": {
             "age": W_AGE, "condition": W_CONDITION, "wear": W_WEAR,
             "efficiency": W_EFFICIENCY, "inspection": W_INSPECTION,
@@ -112,16 +135,31 @@ def compute_risk(
         "score": score,
         "factors": factors,
         "recommendation": _recommend(level, condition, age, factors),
-        "interval_days": BASE_INTERVAL_DAYS[level],
+        "interval_days": interval_days,
+        "type_code": type_code,
     }
 
 
-def next_inspection_date(last_inspection: date | None, interval_days: int) -> date:
+def next_inspection_date(
+    last_inspection: date | None, interval_days: int, type_code: str | None = None
+) -> date:
     base = last_inspection or date.today()
     nxt = base + timedelta(days=interval_days)
-    # If the schedule is already overdue, push to a near-future date.
+
+    # Flood-sensitive structures: ensure a check before the spring flood season.
+    if type_code in FLOOD_SENSITIVE_TYPES:
+        today = date.today()
+        for yr in (nxt.year, nxt.year + 1):
+            pre_flood = date(yr, *PRE_FLOOD_INSPECTION)
+            flood_start = date(yr, *FLOOD_SEASON_START)
+            # if the naive schedule lands at/after the flood season, pull it earlier
+            if today <= pre_flood <= nxt and nxt >= flood_start:
+                nxt = pre_flood
+                break
+
+    # Overdue → reschedule soon, prioritised by urgency (shorter interval = sooner).
     if nxt < date.today():
-        nxt = date.today() + timedelta(days=min(interval_days, 30))
+        nxt = date.today() + timedelta(days=max(7, min(interval_days // 6, 60)))
     return nxt
 
 
