@@ -1,0 +1,32 @@
+# Python / FastAPI
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.env.*
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Node.js / React
+node_modules/
+dist/
+.next/
+.cache/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
