@@ -19,9 +19,7 @@ const MOCK: any = {
 };
 
 const MOCK_RISK: any = {
-  risk_score: 72,
-  recommendation: "Требуется осмотр",
-  next_inspection: "2024-09-15",
+  risk_score: 72, recommendation: "Требуется осмотр", next_inspection: "2024-09-15",
   factors: [
     { name: "Возраст сооружения", value: 66, weight: 0.25, score: 16 },
     { name: "Дата последнего осмотра", value: "2024-03-15", weight: 0.3, score: 20 },
@@ -31,10 +29,8 @@ const MOCK_RISK: any = {
 };
 
 const statusColors: Record<string, string> = {
-  "Норма": "#16a34a",
-  "Требуется осмотр": "#d97706",
-  "Требуется ремонт": "#ea580c",
-  "Критическое состояние": "#dc2626",
+  "Норма": "#16a34a", "Требуется осмотр": "#d97706",
+  "Требуется ремонт": "#ea580c", "Критическое состояние": "#dc2626",
 };
 
 function normalizeRisk(data: any) {
@@ -75,25 +71,26 @@ export default function ObjectDetails() {
     }
   };
 
+  // "Показать на карте" — переходим на /detection с координатами
+  const handleViewOnMap = () => {
+    navigate(`/detection?lat=${obj.latitude}&lng=${obj.longitude}&id=${id}&name=${encodeURIComponent(obj.name)}`);
+  };
+
   const recColor = statusColors[risk?.recommendation] || "#d97706";
 
   return (
     <div style={{ padding: "32px", background: "var(--gray-50)", minHeight: "100vh" }}>
 
-      {/* Delete confirmation modal */}
+      {/* Delete modal */}
       {showDeleteModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "white", borderRadius: "12px", padding: "32px", maxWidth: "400px", width: "90%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
             <div style={{ fontSize: "44px", marginBottom: "12px" }}>⚠️</div>
             <div style={{ fontWeight: 800, fontSize: "18px", color: "#1e293b", marginBottom: "8px" }}>Удалить объект?</div>
-            <div style={{ color: "#64748b", fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>
-              «{obj.name}» будет удалён безвозвратно вместе со всей историей осмотров.
-            </div>
+            <div style={{ color: "#64748b", fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>«{obj.name}» будет удалён безвозвратно вместе со всей историей осмотров.</div>
             <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
               <button onClick={() => setShowDeleteModal(false)} disabled={deleting}
-                style={{ padding: "10px 24px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "white", color: "#475569", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}>
-                Отмена
-              </button>
+                style={{ padding: "10px 24px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "white", color: "#475569", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}>Отмена</button>
               <button onClick={handleDelete} disabled={deleting}
                 style={{ padding: "10px 24px", borderRadius: "8px", border: "none", background: deleting ? "#fca5a5" : "#dc2626", color: "white", fontWeight: 700, fontSize: "14px", cursor: deleting ? "default" : "pointer" }}>
                 {deleting ? "⏳ Удаление..." : "Да, удалить"}
@@ -109,8 +106,16 @@ export default function ObjectDetails() {
           style={{ background: "white", border: "1px solid var(--gray-200)", padding: "8px 16px", borderRadius: "var(--radius-sm)", cursor: "pointer", color: "var(--gray-600)", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px", boxShadow: "var(--shadow-sm)", fontWeight: 500 }}>
           ← Назад
         </button>
-        {/* ✅ КНОПКИ РЕДАКТИРОВАТЬ / УДАЛИТЬ */}
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {/* 🗺️ ПОКАЗАТЬ НА КАРТЕ */}
+          <button
+            onClick={handleViewOnMap}
+            style={{ padding: "8px 18px", borderRadius: "var(--radius-sm)", border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#dcfce7"}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "#f0fdf4"}
+          >
+            🗺️ На карте
+          </button>
           <button
             onClick={() => navigate(`/edit/${id}`)}
             style={{ padding: "8px 18px", borderRadius: "var(--radius-sm)", border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", fontWeight: 700, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
@@ -131,7 +136,6 @@ export default function ObjectDetails() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "20px" }}>
-        {/* Main */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "28px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
@@ -141,18 +145,36 @@ export default function ObjectDetails() {
               </div>
               <span style={{ background: conditionColor[obj.condition] + "18", color: conditionColor[obj.condition], padding: "8px 18px", borderRadius: "10px", fontWeight: 700, fontSize: "13px", border: `1px solid ${conditionColor[obj.condition]}30` }}>{conditionLabel[obj.condition]}</span>
             </div>
-            <div style={{ background: "var(--gray-50)", borderRadius: "var(--radius-md)", height: "180px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px dashed var(--gray-200)", marginBottom: "20px", flexDirection: "column", gap: "8px" }}>
+
+            {/* Координаты с кнопкой */}
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "18px" }}>📍</span>
+                <div>
+                  <div style={{ fontSize: "11px", color: "#15803d", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>Координаты</div>
+                  <div style={{ fontFamily: "monospace", fontSize: "14px", color: "#14532d", fontWeight: 600 }}>{obj.latitude}, {obj.longitude}</div>
+                </div>
+              </div>
+              <button
+                onClick={handleViewOnMap}
+                style={{ padding: "7px 16px", borderRadius: "8px", border: "none", background: "#15803d", color: "white", fontWeight: 700, fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}
+              >
+                🗺️ Открыть на карте
+              </button>
+            </div>
+
+            <div style={{ background: "var(--gray-50)", borderRadius: "var(--radius-md)", height: "160px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px dashed var(--gray-200)", marginBottom: "20px", flexDirection: "column", gap: "8px" }}>
               <span style={{ fontSize: "48px" }}>📷</span>
               <span style={{ color: "var(--gray-400)", fontSize: "13px", fontWeight: 500 }}>Фото объекта</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
               {[
                 { label: "📍 Район", value: obj.district },
-                { label: "🌐 Координаты", value: `${obj.latitude}, ${obj.longitude}` },
                 { label: "📏 Длина (км)", value: obj.length_km ?? "—" },
                 { label: "🏗️ Год постройки", value: obj.year_built ?? "—" },
-                { label: "🔍 Посл. осмотр", value: obj.last_inspection ?? "—" },
+                { label: "🔍 Последний осмотр", value: obj.last_inspection ?? "—" },
                 { label: "⚠️ Уровень риска", value: obj.risk_level },
+                { label: "🌐 Значимость", value: obj.significance ?? "—" },
               ].map((item) => (
                 <div key={item.label} style={{ background: "var(--gray-50)", borderRadius: "var(--radius-sm)", padding: "14px", border: "1px solid var(--gray-200)" }}>
                   <div style={{ fontSize: "11px", color: "var(--gray-400)", marginBottom: "5px", fontWeight: 600 }}>{item.label}</div>
@@ -197,7 +219,6 @@ export default function ObjectDetails() {
           )}
         </div>
 
-        {/* Right column */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 12px", fontWeight: 700 }}>📥 Экспорт отчёта</h3>

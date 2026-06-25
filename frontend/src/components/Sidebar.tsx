@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 const links = [
   { to: "/", label: "Дашборд", icon: "📊", desc: "Обзор системы" },
   { to: "/catalog", label: "Каталог", icon: "📋", desc: "Все объекты" },
-  { to: "/map", label: "Карта", icon: "🗺️", desc: "Геовизуализация" },
   { to: "/analytics", label: "Аналитика", icon: "📈", desc: "Графики и тренды" },
   { to: "/detection", label: "Обнаружение", icon: "🔍", desc: "Поиск по координатам" },
 ];
@@ -19,7 +18,6 @@ export default function Sidebar() {
       boxShadow: "var(--shadow-md)",
       zIndex: 100,
     }}>
-      {/* Logo */}
       <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid var(--gray-100)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <div style={{
