@@ -52,8 +52,9 @@ docker compose up --build
 | DELETE | `/api/structures/{id}` | Удалить |
 | GET | `/api/structures/{id}/risk` | Риск + факторы + рекомендация |
 | POST | `/api/structures/{id}/risk` | Пересчитать и залогировать риск |
-| GET | `/api/structures/{id}/inspections` | История обследований |
-| POST | `/api/structures/{id}/inspections` | Добавить обследование |
+| GET | `/api/structures/{id}/history` | **История эксплуатации**: `{inspections, repairs}` |
+| GET/POST/DELETE | `/api/structures/{id}/inspections` | CRUD осмотров (тип: Плановый/Внеочередной/Аварийный) |
+| GET/POST/DELETE | `/api/structures/{id}/repairs` | CRUD ремонтов (тип: Текущий/Капитальный/Аварийный) |
 
 **Фильтры `GET /api/structures`** (query-параметры, все опциональны):
 `type` (RU-название или код), `condition`, `district`, `risk_level`,
@@ -69,7 +70,10 @@ docker compose up --build
 | GET | `/api/analytics/dashboard` | Всё для главного экрана одним запросом (KPI + распределения + динамика + recently_added + top_risk) |
 | GET | `/api/analytics/charts` | Данные для графиков (по типам/районам/декадам/риску) |
 | GET | `/api/analytics/dynamics?months=12` | Динамика состояния по месяцам (линейный график) |
-| GET | `/api/analytics/top-risk?limit=10` | Топ проблемных объектов (диспетчер) |
+| GET | `/api/analytics/top-risk?limit=10` | **Топ рисковых объектов** (экспертная risk-модель + `risk_reasons`) |
+| GET | `/api/analytics/priority-ranking?limit=50` | **Рейтинг по приоритету осмотра** (экспертная модель) |
+| GET | `/api/structures/{id}/priority` | Priority Score объекта + breakdown (для карточки) |
+| GET | `/api/structures/{id}/risk-score` | Risk Score объекта + причины риска + цвет (для карточки) |
 
 ### Отчёты / Экспорт (ТЗ: отчётность)
 | Метод | Путь | Формат |

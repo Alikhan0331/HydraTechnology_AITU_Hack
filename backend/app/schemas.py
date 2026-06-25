@@ -119,20 +119,91 @@ class StructureMapItem(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
-#  Inspections
+#  Inspections & Repairs (operation history)
 # --------------------------------------------------------------------------- #
+INSPECTION_TYPES = ["Плановый", "Внеочередной", "Аварийный"]
+REPAIR_TYPES = ["Текущий ремонт", "Капитальный ремонт", "Аварийный ремонт"]
+
+
 class InspectionCreate(BaseModel):
-    date: date
+    inspection_date: date
+    inspection_type: str = "Плановый"
+    notes: str | None = None
     inspector: str | None = None
     condition_found: str | None = None
     wear_found: float | None = None
+
+
+class InspectionRead(BaseModel):
+    id: int
+    structure_id: int
+    inspection_date: date
+    inspection_type: str = "Плановый"
+    notes: str | None = None
+    inspector: str | None = None
+    condition_found: str | None = None
+
+
+class RepairCreate(BaseModel):
+    repair_date: date
+    repair_type: str = "Текущий ремонт"
     notes: str | None = None
 
 
-class InspectionRead(InspectionCreate):
+class RepairRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     structure_id: int
+    repair_date: date
+    repair_type: str
+    notes: str | None = None
+
+
+class HistoryResponse(BaseModel):
+    inspections: list[InspectionRead]
+    repairs: list[RepairRead]
+
+
+# --------------------------------------------------------------------------- #
+#  Priority ranking
+# --------------------------------------------------------------------------- #
+class PriorityItem(BaseModel):
+    id: int
+    name: str
+    type: str
+    district: str
+    priority_score: int
+    priority_level: str
+    next_inspection_recommendation: str
+
+
+class PriorityDetail(BaseModel):
+    priority_score: int
+    priority_level: str
+    next_inspection_recommendation: str
+    recommended_interval_days: int
+    breakdown: dict[str, int]
+
+
+# --------------------------------------------------------------------------- #
+#  Top-risk objects (expert risk model)
+# --------------------------------------------------------------------------- #
+class TopRiskItem(BaseModel):
+    id: int
+    name: str
+    type: str
+    district: str
+    risk_score: int
+    risk_level: str
+    risk_reasons: list[str]
+
+
+class RiskScoreDetail(BaseModel):
+    risk_score: int
+    risk_level: str
+    risk_reasons: list[str]
+    color: str
+    breakdown: dict[str, int]
 
 
 # --------------------------------------------------------------------------- #
