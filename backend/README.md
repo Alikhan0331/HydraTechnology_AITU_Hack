@@ -59,6 +59,18 @@ uvicorn app.main:app --reload --port 8000
 | GET | `/api/analytics/charts` | Данные для графиков (по типам/районам/декадам/риску) |
 | GET | `/api/analytics/top-risk?limit=10` | Топ проблемных объектов (диспетчер) |
 
+### Обнаружение и дедупликация (ТЗ задачи 3–4)
+| Метод | Путь | Описание |
+|------|------|----------|
+| GET | `/api/detection/search?lat=&lon=&radius_km=` | Поиск ГТС по координатам |
+
+Возвращает `{ structures: [{id?, name, type, lat, lon, confidence, source, condition?}], summary, osm_available }`.
+Источники (`source`): `osm` (каталог + реальные данные OpenStreetMap через Overpass),
+`satellite_ndwi`, `dem`. Объекты, найденные вне базы, возвращаются без `id` и
+помечаются `verification_status: "new"|"needs_check"`. Дедупликация — по
+расстоянию Haversine (порог 350 м) к ближайшему объекту каталога. Работает и
+офлайн (демо-fallback), и онлайн (реальный Overpass).
+
 ### Справочники (для дропдаунов/легенд)
 `GET /api/meta/types` · `/api/meta/conditions` · `/api/meta/districts` ·
 `/api/meta/risk-levels` · `/api/meta/significance`
