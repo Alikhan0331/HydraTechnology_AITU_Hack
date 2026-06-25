@@ -60,3 +60,24 @@ export const addInspection = (id: number, data: Record<string, any>) =>
 
 export const getMeta = (key: string) =>
   axios.get(`${BASE}/meta/${key}`);
+
+// Добавить объект из OSM/Detection в каталог
+export const addStructureFromOSM = (data: {
+  name: string;
+  type: string;
+  latitude: number;
+  longitude: number;
+  district?: string;
+  source?: string;
+  confidence?: number;
+}) => axios.post(`${BASE}/structures`, {
+  name: data.name,
+  type: data.type,
+  latitude: data.latitude,
+  longitude: data.longitude,
+  district: data.district ?? "Не указан",
+  condition: "monitoring",
+  risk_level: "medium",
+  source: data.source,
+  confidence: data.confidence,
+});

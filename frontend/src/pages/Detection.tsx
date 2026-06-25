@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
-import { getStructures } from "../api/structures";
+import { getStructures, addStructureFromOSM } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
 import "leaflet/dist/leaflet.css";
 
@@ -11,6 +11,7 @@ interface FoundStructure {
   confidence: number; source: string; condition?: string;
   district?: string; risk_level?: string; risk_score?: number;
   year_built?: number; next_inspection?: string; wear_percent?: number;
+  _addedTocatalog?: boolean;
 }
 
 const MOCK_RESULTS: FoundStructure[] = [
@@ -32,6 +33,25 @@ const sourceLabel: Record<string, string> = { osm: "OpenStreetMap", satellite_nd
 const sourceColor: Record<string, string> = { osm: "#1d4ed8", satellite_ndwi: "#7c3aed", dem: "#0891b2" };
 const RISK_COLORS: Record<string, string> = { low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626" };
 const RISK_LABELS: Record<string, string> = { low: "Низкий", medium: "Средний", high: "Высокий", critical: "Критический" };
+
+// Toast notification component
+function Toast({ message, type, onClose }: { message: string; type: "success" | "error"; onClose: () => void }) {
+  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
+  return (
+    <div style={{
+      position: "fixed", bottom: 28, right: 28, zIndex: 9999,
+      background: type === "success" ? "#16a34a" : "#dc2626",
+      color: "white", padding: "12px 20px", borderRadius: "12px",
+      fontWeight: 700, fontSize: "14px", boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+      display: "flex", alignItems: "center", gap: "10px", maxWidth: 340,
+      animation: "slideUp .25s ease"
+    }}>
+      <span style={{ fontSize: 18 }}>{type === "success" ? "✅" : "❌"}</span>
+      <span>{message}</span>
+      <button onClick={onClose} style={{ background: "transparent", border: "none", color: "white", cursor: "pointer", fontSize: 16, marginLeft: 4, opacity: 0.7 }}>✕</button>
+    </div>
+  );
+}
 
 function CompactPopup({ s, onOpen }: { s: any; onOpen?: () => void }) {
   const riskColor = RISK_COLORS[s.risk_level] ?? (s.condition ? conditionColor[s.condition] : "#64748b");
@@ -113,6 +133,8 @@ export default function Detection() {
     fromObject ? { lat: parseFloat(urlLat!), lon: parseFloat(urlLng!), zoom: 15 } : null
   );
   const [fullStructures, setFullStructures] = useState<any[]>([]);
+  const [addingIdx, setAddingIdx] = useState<number | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
     getStructures({ limit: "2000" }).then((res) => { if (Array.isArray(res.data)) setFullStructures(res.data); }).catch(() => {});
@@ -142,16 +164,46 @@ export default function Detection() {
     } finally { setLoading(false); setSearched(true); }
   };
 
+  const handleAddToCatalog = async (r: FoundStructure, idx: number) => {
+    setAddingIdx(idx);
+    try {
+      const res = await addStructureFromOSM({
+        name: r.name,
+        type: r.type,
+        latitude: r.lat,
+        longitude: r.lon,
+        district: r.district,
+        source: r.source,
+        confidence: r.confidence,
+      });
+      const created = res.data;
+      // Обновляем результат — проставляем id и флаг добавления
+      setResults(prev =>
+        (prev ?? []).map((item, i) =>
+          i === idx ? { ...item, id: created.id ?? item.id, _addedTocatalog: true } : item
+        )
+      );
+      setToast({ message: `«${r.name}» добавлен в каталог`, type: "success" });
+    } catch {
+      setToast({ message: `Не удалось добавить «${r.name}»`, type: "error" });
+    } finally {
+      setAddingIdx(null);
+    }
+  };
+
   const inputStyle: React.CSSProperties = { padding: "10px 14px", borderRadius: "var(--radius-sm)", border: "1px solid var(--gray-200)", background: "white", color: "var(--gray-800)", fontSize: "14px", outline: "none", boxShadow: "var(--shadow-sm)", width: "100%" };
   const confidencePct = (c: number) => Math.round(c * 100);
   const confidenceColor = (c: number) => c >= 0.85 ? "#16a34a" : c >= 0.7 ? "#d97706" : "#dc2626";
 
   return (
     <div style={{ padding: "32px", background: "var(--gray-50)", minHeight: "100vh" }}>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
       <div style={{ marginBottom: "24px" }}>
         <h1 style={{ fontSize: "24px", color: "var(--gray-900)", marginBottom: "4px" }}>🔍 Алгоритм обнаружения</h1>
         <p style={{ color: "var(--gray-500)", fontSize: "13px" }}>Поиск гидросооружений по координатам — OSM, спутниковые снимки, анализ рельефа</p>
       </div>
+
       {fromObject && (
         <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "12px", padding: "14px 18px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "12px" }}>
           <span style={{ fontSize: "20px" }}>📍</span>
@@ -162,6 +214,7 @@ export default function Detection() {
           <button onClick={() => navigate(`/object/${urlId}`)} style={{ padding: "6px 14px", borderRadius: "8px", border: "none", background: "#15803d", color: "white", fontWeight: 600, fontSize: "12px", cursor: "pointer" }}>← К объекту</button>
         </div>
       )}
+
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
         {Object.entries(sourceLabel).map(([key, label]) => (
           <div key={key} style={{ display: "flex", alignItems: "center", gap: "7px", background: "white", padding: "6px 14px", borderRadius: "20px", border: `1px solid ${sourceColor[key]}44`, boxShadow: "var(--shadow-sm)" }}>
@@ -170,8 +223,10 @@ export default function Detection() {
           </div>
         ))}
       </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: "20px", alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Search params */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 16px", fontWeight: 700 }}>📍 Параметры поиска</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -183,31 +238,70 @@ export default function Detection() {
               </button>
             </div>
           </div>
+
+          {/* Results list */}
           {results && (
-            <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "16px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", maxHeight: "460px", overflowY: "auto" }}>
+            <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "16px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", maxHeight: "520px", overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                 <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: 0, fontWeight: 700 }}>Найдено объектов</h3>
                 <span style={{ background: "var(--primary-bg)", color: "var(--primary)", padding: "3px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, border: "1px solid #bfdbfe" }}>{results.length}</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {results.map((r, i) => (
-                  <div key={i} onClick={() => { setSelected(r); setFlyTarget({ lat: r.lat, lon: r.lon, zoom: 14 }); }}
-                    style={{ padding: "12px", borderRadius: "var(--radius-sm)", border: selected === r ? "1px solid var(--primary)" : "1px solid var(--gray-200)", background: selected === r ? "var(--primary-bg)" : "var(--gray-50)", cursor: "pointer" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
-                      <span style={{ fontWeight: 600, color: "var(--gray-800)", fontSize: "13px", flex: 1 }}>{r.name}</span>
-                      <span style={{ fontSize: "11px", fontWeight: 700, color: confidenceColor(r.confidence), background: confidenceColor(r.confidence) + "18", padding: "2px 7px", borderRadius: "10px", marginLeft: "6px", flexShrink: 0 }}>{confidencePct(r.confidence)}%</span>
+                {results.map((r, i) => {
+                  const alreadyAdded = r._addedTocatalog || !!r.id;
+                  const isAdding = addingIdx === i;
+                  return (
+                    <div key={i}
+                      onClick={() => { setSelected(r); setFlyTarget({ lat: r.lat, lon: r.lon, zoom: 14 }); }}
+                      style={{
+                        padding: "12px", borderRadius: "var(--radius-sm)",
+                        border: selected === r ? "1px solid var(--primary)" : "1px solid var(--gray-200)",
+                        background: selected === r ? "var(--primary-bg)" : "var(--gray-50)",
+                        cursor: "pointer", transition: "border-color .15s"
+                      }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
+                        <span style={{ fontWeight: 600, color: "var(--gray-800)", fontSize: "13px", flex: 1 }}>{r.name}</span>
+                        <span style={{ fontSize: "11px", fontWeight: 700, color: confidenceColor(r.confidence), background: confidenceColor(r.confidence) + "18", padding: "2px 7px", borderRadius: "10px", marginLeft: "6px", flexShrink: 0 }}>{confidencePct(r.confidence)}%</span>
+                      </div>
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
+                        <span style={{ fontSize: "11px", color: "var(--gray-500)", background: "white", padding: "2px 8px", borderRadius: "5px", border: "1px solid var(--gray-200)" }}>{r.type}</span>
+                        <span style={{ fontSize: "11px", color: sourceColor[r.source] || "var(--gray-500)", background: (sourceColor[r.source] || "#888") + "15", padding: "2px 8px", borderRadius: "5px" }}>{sourceLabel[r.source] || r.source}</span>
+                        {r.risk_level && <span style={{ fontSize: "11px", color: RISK_COLORS[r.risk_level], background: RISK_COLORS[r.risk_level] + "15", padding: "2px 8px", borderRadius: "5px", fontWeight: 700 }}>{RISK_LABELS[r.risk_level]}</span>}
+                      </div>
+
+                      {/* ✅ КНОПКА «ДОБАВИТЬ В КАТАЛОГ» */}
+                      <div style={{ display: "flex", gap: "6px" }} onClick={e => e.stopPropagation()}>
+                        {alreadyAdded && !r._addedTocatalog ? (
+                          <button
+                            onClick={() => r.id && navigate(`/object/${r.id}`)}
+                            style={{ flex: 1, padding: "6px 10px", borderRadius: "6px", border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", fontWeight: 700, fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}
+                          >📋 В каталоге — открыть</button>
+                        ) : r._addedTocatalog ? (
+                          <button
+                            onClick={() => r.id && navigate(`/object/${r.id}`)}
+                            style={{ flex: 1, padding: "6px 10px", borderRadius: "6px", border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#16a34a", fontWeight: 700, fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}
+                          >✅ Добавлен — открыть карточку</button>
+                        ) : (
+                          <button
+                            onClick={() => handleAddToCatalog(r, i)}
+                            disabled={isAdding}
+                            style={{ flex: 1, padding: "6px 10px", borderRadius: "6px", border: "1px solid #16a34a55", background: isAdding ? "#f0fdf4" : "#ecfdf5", color: "#16a34a", fontWeight: 700, fontSize: "11px", cursor: isAdding ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", transition: "all .15s" }}
+                          >
+                            {isAdding
+                              ? <><span style={{ display: "inline-block", width: 11, height: 11, border: "2px solid #16a34a", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />Добавляется...</>
+                              : <>➕ Добавить в каталог</>}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: "11px", color: "var(--gray-500)", background: "white", padding: "2px 8px", borderRadius: "5px", border: "1px solid var(--gray-200)" }}>{r.type}</span>
-                      <span style={{ fontSize: "11px", color: sourceColor[r.source] || "var(--gray-500)", background: (sourceColor[r.source] || "#888") + "15", padding: "2px 8px", borderRadius: "5px" }}>{sourceLabel[r.source] || r.source}</span>
-                      {r.risk_level && <span style={{ fontSize: "11px", color: RISK_COLORS[r.risk_level], background: RISK_COLORS[r.risk_level] + "15", padding: "2px 8px", borderRadius: "5px", fontWeight: 700 }}>{RISK_LABELS[r.risk_level]}</span>}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
+
+        {/* Map */}
         <div style={{ background: "white", borderRadius: "var(--radius-lg)", overflow: "hidden", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", height: "640px" }}>
           <MapContainer center={[parseFloat(lat) || 42.85, parseFloat(lon) || 71.37]} zoom={fromObject ? 15 : 9} style={{ height: "100%", width: "100%" }}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
@@ -224,7 +318,7 @@ export default function Detection() {
             )}
             {(results || []).map((r, i) => r.lat && r.lon ? (
               <CircleMarker key={i} center={[r.lat, r.lon]} radius={selected === r ? 16 : 12}
-                fillColor={r.condition ? conditionColor[r.condition] : sourceColor[r.source] || "#888"}
+                fillColor={r._addedTocatalog ? "#16a34a" : r.condition ? conditionColor[r.condition] : sourceColor[r.source] || "#888"}
                 color="white" weight={2} fillOpacity={selected === r ? 1 : 0.85}
                 eventHandlers={{ click: () => { setSelected(r); setFlyTarget({ lat: r.lat, lon: r.lon, zoom: 14 }); } }}>
                 <Popup maxWidth={260} minWidth={240}><CompactPopup s={r} onOpen={() => r.id && navigate(`/object/${r.id}`)} /></Popup>
@@ -233,7 +327,7 @@ export default function Detection() {
           </MapContainer>
         </div>
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
     </div>
   );
 }
