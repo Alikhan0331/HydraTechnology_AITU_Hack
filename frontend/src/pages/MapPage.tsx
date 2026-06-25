@@ -1,8 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
-import { getMapData } from "../api/structures";
-import type { Structure } from "../api/structures";
+import { getStructures } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
 import "leaflet/dist/leaflet.css";
 
@@ -28,13 +27,15 @@ const VERIFY_LABELS: Record<string, string> = {
 };
 
 export default function MapPage() {
+  // Use full /api/structures (StructureRead) instead of /api/structures/map (StructureMapItem)
+  // so the popup gets all extended fields: risk_score, wear_percent, next_inspection, etc.
   const [allStructures, setAllStructures] = useState<any[]>(MOCK);
   const [condFilter, setCondFilter] = useState("все");
   const [riskFilter, setRiskFilter] = useState("все");
   const navigate = useNavigate();
 
   useEffect(() => {
-    getMapData().then((res) => {
+    getStructures({ limit: "2000" }).then((res) => {
       if (Array.isArray(res.data) && res.data.length > 0) setAllStructures(res.data);
     }).catch(() => {});
   }, []);
@@ -84,44 +85,116 @@ export default function MapPage() {
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
           {structures.map((s) => {
             const age = s.year_built ? 2026 - s.year_built : null;
+            const effLoss = (s.efficiency_design && s.efficiency_actual)
+              ? Math.max(0, Math.round((s.efficiency_design - s.efficiency_actual) * 100))
+              : null;
             return (
-              <CircleMarker key={s.id} center={[s.latitude, s.longitude]} radius={12} fillColor={conditionColor[s.condition] ?? "#94a3b8"} color="white" weight={2} fillOpacity={0.9}>
-                <Popup maxWidth={320}>
-                  <div style={{ fontFamily: "Inter, sans-serif", minWidth: "260px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "6px" }}>
+              <CircleMarker
+                key={s.id}
+                center={[s.latitude, s.longitude]}
+                radius={12}
+                fillColor={conditionColor[s.condition] ?? "#94a3b8"}
+                color="white"
+                weight={2}
+                fillOpacity={0.9}
+              >
+                <Popup maxWidth={340} minWidth={300}>
+                  <div style={{ fontFamily: "Inter, sans-serif", width: "300px" }}>
+
+                    {/* ── Header ── */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "8px" }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: "14px", color: "#1e293b", lineHeight: 1.3 }}>{s.name}</div>
-                        <div style={{ color: "#94a3b8", fontSize: "11px", marginTop: "2px" }}>{s.type} · {s.district}{s.locality ? `, ${s.locality}` : ""}</div>
+                        <div style={{ color: "#94a3b8", fontSize: "11px", marginTop: "2px" }}>
+                          {s.type} · {s.district}{s.locality ? `, ${s.locality}` : ""}
+                        </div>
                       </div>
-                      <span style={{ fontSize: "10px", fontWeight: 800, color: RISK_COLORS[s.risk_level] ?? "#64748b", background: (RISK_COLORS[s.risk_level] ?? "#64748b") + "15", padding: "4px 8px", borderRadius: "999px", whiteSpace: "nowrap" }}>{RISK_LABELS[s.risk_level] ?? s.risk_level}</span>
+                      <span style={{
+                        fontSize: "10px", fontWeight: 800,
+                        color: RISK_COLORS[s.risk_level] ?? "#64748b",
+                        background: (RISK_COLORS[s.risk_level] ?? "#64748b") + "18",
+                        padding: "4px 9px", borderRadius: "999px", whiteSpace: "nowrap",
+                        border: `1px solid ${(RISK_COLORS[s.risk_level] ?? "#64748b")}30`,
+                        flexShrink: 0,
+                      }}>
+                        {RISK_LABELS[s.risk_level] ?? s.risk_level} риск
+                      </span>
                     </div>
 
-                    <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
-                      <span style={{ color: conditionColor[s.condition] ?? "#64748b", fontWeight: 700, fontSize: "11px", background: (conditionColor[s.condition] ?? "#64748b") + "18", padding: "3px 9px", borderRadius: "10px", border: `1px solid ${(conditionColor[s.condition] ?? '#64748b')}30` }}>{conditionLabel[s.condition] ?? s.condition}</span>
-                      {s.significance && <span style={{ color: "#2563eb", fontWeight: 700, fontSize: "11px", background: "#dbeafe", padding: "3px 9px", borderRadius: "10px" }}>{SIGNIFICANCE_LABELS[s.significance] ?? s.significance}</span>}
-                      {s.verification_status && <span style={{ color: "#475569", fontWeight: 700, fontSize: "11px", background: "#f1f5f9", padding: "3px 9px", borderRadius: "10px" }}>{VERIFY_LABELS[s.verification_status] ?? s.verification_status}</span>}
+                    {/* ── Status badges ── */}
+                    <div style={{ display: "flex", gap: "5px", marginBottom: "12px", flexWrap: "wrap" }}>
+                      <span style={{
+                        color: conditionColor[s.condition] ?? "#64748b", fontWeight: 700, fontSize: "11px",
+                        background: (conditionColor[s.condition] ?? "#64748b") + "18",
+                        padding: "3px 9px", borderRadius: "10px",
+                        border: `1px solid ${(conditionColor[s.condition] ?? "#64748b")}30`,
+                      }}>{conditionLabel[s.condition] ?? s.condition}</span>
+                      {s.significance && (
+                        <span style={{ color: "#2563eb", fontWeight: 700, fontSize: "11px", background: "#dbeafe", padding: "3px 9px", borderRadius: "10px" }}>
+                          {SIGNIFICANCE_LABELS[s.significance] ?? s.significance}
+                        </span>
+                      )}
+                      {s.verification_status && (
+                        <span style={{ color: "#475569", fontWeight: 700, fontSize: "11px", background: "#f1f5f9", padding: "3px 9px", borderRadius: "10px" }}>
+                          {VERIFY_LABELS[s.verification_status] ?? s.verification_status}
+                        </span>
+                      )}
                     </div>
 
+                    {/* ── Score + next inspection ── */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "10px" }}>
-                      <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "8px 10px" }}>
-                        <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase" }}>Inspection Score</div>
-                        <div style={{ fontSize: "18px", color: RISK_COLORS[s.risk_level] ?? "#0f172a", fontWeight: 900 }}>{s.risk_score ?? "—"}</div>
+                      <div style={{ background: (RISK_COLORS[s.risk_level] ?? "#64748b") + "10", border: `1px solid ${(RISK_COLORS[s.risk_level] ?? "#64748b")}25`, borderRadius: "10px", padding: "9px 11px" }}>
+                        <div style={{ fontSize: "9px", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Inspection Score</div>
+                        <div style={{ fontSize: "22px", color: RISK_COLORS[s.risk_level] ?? "#0f172a", fontWeight: 900, lineHeight: 1.1 }}>{s.risk_score ?? "—"}<span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 500 }}>/100</span></div>
+                        {s.risk_score != null && (
+                          <div style={{ height: 5, background: "#e2e8f0", borderRadius: 999, marginTop: 5, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${Math.min(s.risk_score, 100)}%`, background: RISK_COLORS[s.risk_level] ?? "#94a3b8", borderRadius: 999 }} />
+                          </div>
+                        )}
                       </div>
-                      <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "8px 10px" }}>
-                        <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase" }}>След. осмотр</div>
-                        <div style={{ fontSize: "12px", color: "#0f172a", fontWeight: 800 }}>{s.next_inspection ?? "—"}</div>
+                      <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "9px 11px" }}>
+                        <div style={{ fontSize: "9px", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Repair Score</div>
+                        <div style={{ fontSize: "22px", color: "#ea580c", fontWeight: 900, lineHeight: 1.1 }}>
+                          {s.wear_percent != null ? Math.max(0, 100 - s.wear_percent) : "—"}
+                          <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 500 }}>/100</span>
+                        </div>
+                        {s.wear_percent != null && (
+                          <div style={{ height: 5, background: "#e2e8f0", borderRadius: 999, marginTop: 5, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${Math.max(0, 100 - s.wear_percent)}%`, background: "#ea580c", borderRadius: 999 }} />
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}><span style={{ fontSize: "11px", color: "#64748b" }}>📍 Координаты</span><span style={{ fontSize: "11px", color: "#0f172a", fontWeight: 700, fontFamily: "monospace" }}>{s.latitude}, {s.longitude}</span></div>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}><span style={{ fontSize: "11px", color: "#64748b" }}>🏗️ Год постройки</span><span style={{ fontSize: "11px", color: "#0f172a", fontWeight: 700 }}>{s.year_built ?? "—"}{age ? ` · ${age} лет` : ""}</span></div>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}><span style={{ fontSize: "11px", color: "#64748b" }}>📏 Длина / мощность</span><span style={{ fontSize: "11px", color: "#0f172a", fontWeight: 700 }}>{s.length_km ? `${s.length_km} км` : (s.capacity ? `${s.capacity} м³/с` : "—")}</span></div>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}><span style={{ fontSize: "11px", color: "#64748b" }}>🧱 Износ</span><span style={{ fontSize: "11px", color: "#0f172a", fontWeight: 700 }}>{s.wear_percent != null ? `${s.wear_percent}%` : "—"}</span></div>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}><span style={{ fontSize: "11px", color: "#64748b" }}>💧 Источник воды</span><span style={{ fontSize: "11px", color: "#0f172a", fontWeight: 700 }}>{s.water_source ?? "—"}</span></div>
+                    {/* ── Key info rows ── */}
+                    <div style={{ background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0", padding: "10px 12px", marginBottom: "10px", display: "flex", flexDirection: "column", gap: "7px" }}>
+                      <Row icon="🏗️" label="Год постройки" value={s.year_built ? `${s.year_built} · ${age} лет` : "—"} />
+                      <Row icon="🧱" label="Износ" value={s.wear_percent != null ? `${s.wear_percent}%` : "—"} />
+                      <Row icon="📏" label="Длина" value={s.length_km ? `${s.length_km} км` : "—"} />
+                      <Row icon="💧" label="Пропускная способность" value={s.capacity ? `${s.capacity} м³/с` : "—"} />
+                      <Row icon="🌾" label="Площадь орошения" value={s.area_ha ? `${s.area_ha} га` : "—"} />
+                      {effLoss !== null && <Row icon="📉" label="Потеря эффективности" value={`${effLoss}%`} />}
+                      <Row icon="💦" label="Источник воды" value={s.water_source ?? "—"} />
+                      <Row icon="📅" label="Последний осмотр" value={s.last_inspection ?? "—"} />
+                      <Row icon="🔔" label="Следующий осмотр" value={s.next_inspection ?? "—"} highlight />
                     </div>
 
-                    <button onClick={() => navigate(`/object/${s.id}`)} style={{ background: "#1d4ed8", color: "white", border: "none", padding: "8px 14px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: 700, width: "100%" }}>
+                    {/* ── Coordinates ── */}
+                    <div style={{ fontFamily: "monospace", fontSize: "10px", color: "#94a3b8", marginBottom: "10px", textAlign: "center" }}>
+                      📍 {s.latitude}, {s.longitude}
+                    </div>
+
+                    {/* ── CTA ── */}
+                    <button
+                      onClick={() => navigate(`/object/${s.id}`)}
+                      style={{
+                        background: "linear-gradient(135deg, #1d4ed8, #2563eb)",
+                        color: "white", border: "none",
+                        padding: "9px 14px", borderRadius: "9px",
+                        cursor: "pointer", fontSize: "12px", fontWeight: 700,
+                        width: "100%", boxShadow: "0 2px 8px rgba(37,99,235,0.35)",
+                      }}
+                    >
                       Открыть карточку объекта →
                     </button>
                   </div>
@@ -131,6 +204,23 @@ export default function MapPage() {
           })}
         </MapContainer>
       </div>
+    </div>
+  );
+}
+
+function Row({ icon, label, value, highlight = false }: { icon: string; label: string; value: string; highlight?: boolean }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
+      <span style={{ fontSize: "11px", color: "#64748b", display: "flex", alignItems: "center", gap: "4px" }}>
+        <span>{icon}</span>{label}
+      </span>
+      <span style={{
+        fontSize: "11px", fontWeight: 700,
+        color: highlight ? "#16a34a" : "#0f172a",
+        background: highlight ? "#dcfce7" : "transparent",
+        padding: highlight ? "1px 7px" : undefined,
+        borderRadius: highlight ? "8px" : undefined,
+      }}>{value}</span>
     </div>
   );
 }
