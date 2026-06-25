@@ -134,6 +134,7 @@ def parse_file(filename: str, content: bytes) -> list[dict]:
             if idx < len(row) and row[idx] not in (None, ""):
                 rec[field] = row[idx]
         if rec:
+            rec["_col0"] = row[0] if row and row[0] not in (None, "") else None
             out.append(rec)
     return out
 
@@ -180,18 +181,20 @@ def _map_district(value, row_index: int) -> str:
 
 
 # --- dedup against the catalog (TZ task 4 on ingest) ------------------------
-def _find_duplicate(db: Session, name: str, type_code: str, lat: float, lon: float):
-    # 1) same coordinates → same object (reliable when the file has real coords)
-    dlat = dlon = DUP_SPOT_M / 100_000
-    spot = select(models.HydraulicStructure).where(
-        models.HydraulicStructure.latitude.between(lat - dlat, lat + dlat),
-        models.HydraulicStructure.longitude.between(lon - dlon, lon + dlon),
-    )
-    for s in db.scalars(spot):
-        if haversine_m(lat, lon, s.latitude, s.longitude) <= DUP_SPOT_M:
-            return s
-    # 2) same type + strongly-similar name anywhere (handles geocoded registry data
-    #    where coordinates are approximate)
+def _find_duplicate(db: Session, name: str, type_code: str, lat: float, lon: float,
+                    real_coords: bool):
+    # 1) same coordinates → same object — ONLY when the file gave real coordinates
+    #    (geocoded district-center coords would collide by chance and false-match).
+    if real_coords:
+        dlat = dlon = DUP_SPOT_M / 100_000
+        spot = select(models.HydraulicStructure).where(
+            models.HydraulicStructure.latitude.between(lat - dlat, lat + dlat),
+            models.HydraulicStructure.longitude.between(lon - dlon, lon + dlon),
+        )
+        for s in db.scalars(spot):
+            if haversine_m(lat, lon, s.latitude, s.longitude) <= DUP_SPOT_M:
+                return s
+    # 2) same type + matching name (primary signal for registry data without coords)
     same_type = select(models.HydraulicStructure).where(
         models.HydraulicStructure.type_code == type_code
     )
@@ -208,6 +211,12 @@ def import_rows(db: Session, rows: list[dict], default_type: str = "Канал")
 
     for i, rec in enumerate(rows, start=1):
         try:
+            # skip leftover sub-header / column-number rows (condition is numeric there)
+            cond_raw = rec.get("condition")
+            if cond_raw is not None and _norm(cond_raw).replace(".", "").isdigit():
+                skipped_empty += 1
+                continue
+
             wear = _num(rec.get("wear_percent"))
             wear_fraction = (wear / 100) if wear is not None and wear > 1 else wear
             year = _int(rec.get("year_built"))
@@ -218,23 +227,26 @@ def import_rows(db: Session, rows: list[dict], default_type: str = "Канал")
                           else (_infer_type(name or "") or default_type))
 
             lat, lon = _num(rec.get("latitude")), _num(rec.get("longitude"))
-            has_payload = any(rec.get(k) for k in ("year_built", "length_km", "wear_percent",
-                                                   "water_source", "condition", "capacity"))
-            # synthesize a name for registry rows that only carry a number / nothing
+            real_coords = lat is not None and lon is not None
+            has_payload = any(_num(rec.get(k)) is not None or rec.get(k)
+                              for k in ("year_built", "length_km", "wear_percent",
+                                        "water_source", "capacity"))
+            # name from the source number (column №) so re-importing the same
+            # registry is idempotent; fall back to row index.
             if not name or name.isdigit():
-                if not (has_payload or (lat and lon)):
+                if not (has_payload or real_coords):
                     skipped_empty += 1   # title / sub-header / empty row
                     continue
-                name = f"{type_value} №{i}"
+                src_num = _int(rec.get("_col0"))
+                name = f"{type_value} №{src_num if src_num is not None else i}"
 
             district = _map_district(rec.get("district"), i)
-            geocoded = False
-            if lat is None or lon is None:
+            geocoded = not real_coords
+            if not real_coords:
                 lat, lon = coords_for_district(district, i)
-                geocoded = True
 
             _ru, code = crud._resolve_type(type_value)
-            dup = _find_duplicate(db, name, code, lat, lon)
+            dup = _find_duplicate(db, name, code, lat, lon, real_coords=real_coords)
             if dup:
                 duplicates.append({"row": i, "name": name,
                                    "matched_id": dup.id, "matched_name": dup.name})

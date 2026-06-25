@@ -98,7 +98,7 @@ def generate_canals() -> list[dict]:
         length = r.get("length_total_km")
         no = r.get("src_no") or i + 1
         out.append(_assemble(
-            idx=f"c{i}", name=f"Канал {_short_river(river)} №{no}",
+            idx=f"c{i}", name=f"Канал №{no}",   # matches importer naming → re-import dedups
             type_code="canal", district=district, year_built=r.get("year_built"),
             length_km=length, tech_condition=r.get("tech_condition"),
             wear_fraction=r.get("wear_raw"), eff_design=r.get("eff_design"),

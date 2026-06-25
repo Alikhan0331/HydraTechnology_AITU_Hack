@@ -64,6 +64,8 @@ def _name_similar(a: str | None, b: str | None) -> bool:
         return False
     if na == nb:
         return True
+    if na.isdigit() or nb.isdigit():
+        return False  # numeric ids (e.g. "№15"): require an exact match only
     if (na in nb or nb in na) and abs(len(na) - len(nb)) <= 4:
         return True
     ta, tb = set(na.split()), set(nb.split())
