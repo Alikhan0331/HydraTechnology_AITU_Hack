@@ -1,15 +1,16 @@
 # HydraTechnology backend — core runtime deps.
 #
-# Use lower-bound (>=), NOT hard (==) pins for pydantic: pip then picks a version
-# that has a prebuilt wheel for the local interpreter, which avoids the Rust
-# (pydantic-core) source build on ALL Python versions — including 3.13 and 3.14.
-# A hard pin like pydantic==2.10.6 has no wheel on Python 3.14 and forces a Rust
-# build that fails. To be safe on any machine, install with:
-#     pip install --only-binary=:all: -r requirements.txt
+# CROSS-PLATFORM PIN (do not change to pydantic==2.10.6!):
+#   pydantic 2.13.4 → pydantic-core 2.46.4, which ships PREBUILT WHEELS for
+#   BOTH cp313 (teammates) and cp314, on Windows / macOS / Linux.
+#   The old pin pydantic-core==2.27.2 has NO cp314 wheel → Rust build → fails.
+#   Do NOT pin pydantic-core separately; pydantic pulls the matching version.
+# For extra safety install wheels-only (errors instead of building from source):
+#   pip install --only-binary=:all: -r requirements.txt
 fastapi>=0.115
 uvicorn[standard]>=0.34
 SQLAlchemy>=2.0
-pydantic>=2.10
+pydantic==2.13.4
 pydantic-settings>=2.7
 python-dotenv>=1.0
 httpx>=0.28
@@ -17,6 +18,6 @@ openpyxl>=3.1
 fpdf2>=2.8
 
 # --- Optional (PostgreSQL in production / docker-compose) ---
-# psycopg[binary]>=3.2
+# psycopg[binary]>=3.2   (installed inside the Docker image automatically)
 # Default DB is SQLite (zero-setup). For PostgreSQL set DATABASE_URL, e.g.
 #   DATABASE_URL=postgresql+psycopg://hydra:hydra@localhost:5432/hydra
