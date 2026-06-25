@@ -8,9 +8,9 @@ import ObjectDetails from "./pages/ObjectDetails";
 export default function App() {
   return (
     <BrowserRouter>
-      <div style={{ display: "flex", minHeight: "100vh", background: "#0f172a" }}>
+      <div style={{ display: "flex", minHeight: "100vh", background: "var(--gray-50)" }}>
         <Sidebar />
-        <div style={{ flex: 1, marginLeft: "240px", overflowY: "auto" }}>
+        <div style={{ flex: 1, marginLeft: "260px", minHeight: "100vh" }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/catalog" element={<Catalog />} />

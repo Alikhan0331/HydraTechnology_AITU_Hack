@@ -3,29 +3,35 @@ interface StatCardProps {
   value: number | string;
   color?: string;
   icon?: string;
-  gradient?: string;
+  trend?: string;
 }
 
-export default function StatCard({ title, value, color = "#3b82f6", icon, gradient }: StatCardProps) {
+export default function StatCard({ title, value, color = "#1d4ed8", icon, trend }: StatCardProps) {
   return (
     <div style={{
-      background: gradient || "linear-gradient(135deg, #1e293b, #0f172a)",
-      borderRadius: "16px",
-      padding: "24px",
-      border: `1px solid ${color}33`,
+      background: "white",
+      borderRadius: "var(--radius-lg)",
+      padding: "20px",
+      border: "1px solid var(--gray-200)",
+      boxShadow: "var(--shadow-sm)",
       position: "relative",
       overflow: "hidden",
-      boxShadow: `0 4px 24px ${color}22`,
-    }}>
-      {/* Glow */}
-      <div style={{
-        position: "absolute", top: -20, right: -20,
-        width: 80, height: 80, borderRadius: "50%",
-        background: color + "22", filter: "blur(20px)",
-      }} />
-      <div style={{ fontSize: "28px", marginBottom: "12px" }}>{icon}</div>
-      <div style={{ fontSize: "36px", fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: "13px", color: "#64748b", marginTop: "6px", fontWeight: 500 }}>{title}</div>
+    }}
+    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--shadow-md)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)"; }}
+    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--shadow-sm)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
+    >
+      <div style={{ position: "absolute", top: 0, right: 0, width: 80, height: 80, borderRadius: "0 16px 0 80px", background: color + "0d" }} />
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "12px" }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: "10px",
+          background: color + "18",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "20px"
+        }}>{icon}</div>
+        {trend && <span style={{ fontSize: "11px", color: "#16a34a", background: "#dcfce7", padding: "2px 8px", borderRadius: "20px", fontWeight: 600 }}>{trend}</span>}
+      </div>
+      <div style={{ fontSize: "30px", fontFamily: "Manrope, sans-serif", fontWeight: 800, color, lineHeight: 1, marginBottom: "6px" }}>{value}</div>
+      <div style={{ fontSize: "13px", color: "var(--gray-500)", fontWeight: 500 }}>{title}</div>
     </div>
   );
 }

@@ -22,47 +22,39 @@ export default function MapPage() {
   }, []);
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0f172a" }}>
-      {/* Header */}
-      <div style={{ padding: "20px 32px", background: "#0f172a", borderBottom: "1px solid #1e293b" }}>
-        <h1 style={{ color: "white", fontSize: "20px", fontWeight: 700, margin: "0 0 12px" }}>🗺️ Карта объектов</h1>
-        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-          {Object.entries(conditionColor).map(([key, color]) => (
-            <div key={key} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ width: 12, height: 12, borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}` }} />
-              <span style={{ fontSize: "13px", color: "#94a3b8" }}>{conditionLabel[key]}</span>
-            </div>
-          ))}
-        </div>
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "var(--gray-50)" }}>
+      {/* Top bar */}
+      <div style={{ padding: "16px 24px", background: "white", borderBottom: "1px solid var(--gray-200)", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", boxShadow: "var(--shadow-sm)" }}>
+        <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: "15px", color: "var(--gray-900)", marginRight: "8px" }}>🗺️ Карта объектов</span>
+        <div style={{ width: 1, height: 20, background: "var(--gray-200)", margin: "0 8px" }} />
+        {Object.entries(conditionColor).map(([key, color]) => (
+          <div key={key} style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--gray-50)", padding: "5px 12px", borderRadius: "20px", border: "1px solid var(--gray-200)" }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />
+            <span style={{ fontSize: "12px", color: "var(--gray-600)", fontWeight: 500 }}>{conditionLabel[key]}</span>
+          </div>
+        ))}
       </div>
-      <div style={{ flex: 1, borderRadius: "0", overflow: "hidden" }}>
+      <div style={{ flex: 1 }}>
         <MapContainer center={[42.85, 71.37]} zoom={9} style={{ height: "100%", width: "100%" }}>
           <TileLayer
-            url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-            attribution='&copy; Stadia Maps'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; OpenStreetMap contributors'
           />
           {structures.map((s) => (
-            <CircleMarker
-              key={s.id}
-              center={[s.latitude, s.longitude]}
-              radius={14}
-              fillColor={conditionColor[s.condition]}
-              color={conditionColor[s.condition]}
-              weight={2}
-              fillOpacity={0.9}
-            >
+            <CircleMarker key={s.id} center={[s.latitude, s.longitude]} radius={14}
+              fillColor={conditionColor[s.condition]} color="white" weight={2} fillOpacity={0.9}>
               <Popup>
-                <div style={{ minWidth: "160px", fontFamily: "sans-serif" }}>
-                  <strong style={{ fontSize: "14px" }}>{s.name}</strong><br />
-                  <span style={{ color: "#6b7280", fontSize: "12px" }}>{s.type} · {s.district}</span><br />
-                  <span style={{ color: conditionColor[s.condition], fontWeight: 600, fontSize: "12px" }}>
+                <div style={{ minWidth: "170px", fontFamily: "Inter, sans-serif" }}>
+                  <div style={{ fontWeight: 700, fontSize: "14px", color: "#1e293b", marginBottom: "4px" }}>{s.name}</div>
+                  <div style={{ color: "#64748b", fontSize: "12px", marginBottom: "6px" }}>{s.type} · {s.district}</div>
+                  <div style={{ display: "inline-block", color: conditionColor[s.condition], fontWeight: 600, fontSize: "12px",
+                    background: conditionColor[s.condition] + "18", padding: "3px 10px", borderRadius: "10px", marginBottom: "10px" }}>
                     {conditionLabel[s.condition]}
-                  </span><br />
-                  <button
-                    onClick={() => navigate(`/object/${s.id}`)}
-                    style={{ marginTop: "8px", background: "#1d4ed8", color: "white", border: "none", padding: "5px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "12px" }}
-                  >
-                    Подробнее →
+                  </div>
+                  <br />
+                  <button onClick={() => navigate(`/object/${s.id}`)}
+                    style={{ background: "#1d4ed8", color: "white", border: "none", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>
+                    Открыть карточку →
                   </button>
                 </div>
               </Popup>
