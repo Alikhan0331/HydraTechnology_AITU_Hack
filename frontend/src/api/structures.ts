@@ -19,6 +19,15 @@ export const getStructures = (params?: Record<string, string>) =>
 export const getStructure = (id: number) =>
   axios.get(`${BASE}/structures/${id}`);
 
+export const createStructure = (data: Record<string, any>) =>
+  axios.post(`${BASE}/structures`, data);
+
+export const updateStructure = (id: number, data: Record<string, any>) =>
+  axios.put(`${BASE}/structures/${id}`, data);
+
+export const deleteStructure = (id: number) =>
+  axios.delete(`${BASE}/structures/${id}`);
+
 export const getMapData = () =>
   axios.get(`${BASE}/structures/map`);
 

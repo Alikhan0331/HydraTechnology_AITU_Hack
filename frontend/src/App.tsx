@@ -7,6 +7,7 @@ import MapPage from "./pages/MapPage";
 import ObjectDetails from "./pages/ObjectDetails";
 import Detection from "./pages/Detection";
 import Analytics from "./pages/Analytics";
+import CreateObject from "./pages/CreateObject";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
               <Route path="/object/:id" element={<ObjectDetails />} />
               <Route path="/detection" element={<Detection />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/create" element={<CreateObject />} />
             </Routes>
           </ErrorBoundary>
         </div>
