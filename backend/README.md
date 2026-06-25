@@ -25,6 +25,16 @@ uvicorn app.main:app --reload --port 8000
 - БД по умолчанию — SQLite-файл `hydra.db` (никакой установки не требуется).
   Для PostgreSQL — скопируй `.env.example` → `.env` и задай `DATABASE_URL`.
 
+### 🐳 Через Docker (PostgreSQL + API одной командой)
+
+Из корня репозитория:
+```bash
+docker compose up --build
+```
+Поднимает PostgreSQL 16 + FastAPI. Бэкенд **сам создаёт таблицы и засевает БД**
+при первом старте. API на `http://localhost:8000`, Postgres на `:5432`.
+Проверено: `docker compose up` → 539 объектов в Postgres, аналитика работает.
+
 ---
 
 ## 📡 API-контракт (для фронтенда и интеграции)

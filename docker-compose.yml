@@ -1,0 +1,44 @@
+# HydraTechnology — full backend stack (PostgreSQL + FastAPI) in one command:
+#     docker compose up --build
+# API:     http://localhost:8000  (Swagger at /docs)
+# The backend auto-creates tables and seeds the DB on first startup.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hydra
+      POSTGRES_PASSWORD: hydra
+      POSTGRES_DB: hydra
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hydra"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://hydra:hydra@db:5432/hydra
+      CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
+      LLM_API_KEY: ""
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Frontend (optional) — owned by the frontend lead. Once a frontend/Dockerfile
+  # exists, uncomment to bring the whole stack up together:
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "5173:5173"
+  #   depends_on:
+  #     - backend
+
+volumes:
+  pgdata:
