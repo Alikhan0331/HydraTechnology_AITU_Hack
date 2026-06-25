@@ -59,6 +59,16 @@ uvicorn app.main:app --reload --port 8000
 | GET | `/api/analytics/charts` | Данные для графиков (по типам/районам/декадам/риску) |
 | GET | `/api/analytics/top-risk?limit=10` | Топ проблемных объектов (диспетчер) |
 
+### Отчёты / Экспорт (ТЗ: отчётность)
+| Метод | Путь | Формат |
+|------|------|--------|
+| GET | `/api/reports/structures.csv` | CSV (UTF-8 BOM, `;`) |
+| GET | `/api/reports/structures.xlsx` | Excel (листы «Объекты» + «Сводка») |
+| GET | `/api/reports/structures.pdf` | PDF (сводка + таблица, кириллица) |
+
+Принимают те же фильтры, что и `/api/structures` → «экспорт текущего вида».
+Пример: `/api/reports/structures.xlsx?condition=emergency&district=Меркенский`.
+
 ### Обнаружение и дедупликация (ТЗ задачи 3–4)
 | Метод | Путь | Описание |
 |------|------|----------|
