@@ -9,9 +9,12 @@ const MOCK: Structure[] = [
   { id: 2, name: "Шлюз №12", type: "Шлюз", district: "Меркенский", condition: "monitoring", risk_level: "medium", latitude: 42.91, longitude: 71.70 },
   { id: 3, name: "Плотина Тасоткель", type: "Плотина", district: "Жуалынский", condition: "requires_repair", risk_level: "high", latitude: 42.58, longitude: 72.10 },
   { id: 4, name: "Насосная станция №3", type: "Насосная станция", district: "Байзакский", condition: "emergency", risk_level: "critical", latitude: 42.75, longitude: 71.80 },
+  { id: 5, name: "Канал арнасай", type: "Канал", district: "Таласский", condition: "monitoring", risk_level: "medium", latitude: 42.52, longitude: 71.90 },
+  { id: 6, name: "Гидропост №15", type: "Гидропост", district: "Жамбылский", condition: "good", risk_level: "low", latitude: 42.78, longitude: 71.55 },
 ];
 
-const types = ["Все", "Канал", "Шлюз", "Плотина", "Насосная станция"];
+const PAGE_SIZE = 10;
+const types = ["Все", "Канал", "Шлюз", "Плотина", "Насосная станция", "Гидропост"];
 const conditions = ["Все", "good", "monitoring", "requires_repair", "emergency"];
 
 export default function Catalog() {
@@ -19,6 +22,7 @@ export default function Catalog() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("Все");
   const [condFilter, setCondFilter] = useState("Все");
+  const [page, setPage] = useState(1);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,7 +37,10 @@ export default function Catalog() {
     return matchSearch && matchType && matchCond;
   });
 
-  const inputStyle = {
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const inputStyle: React.CSSProperties = {
     padding: "10px 14px", borderRadius: "10px",
     border: "1px solid #1e293b", background: "#1e293b",
     color: "white", fontSize: "14px", outline: "none",
@@ -46,29 +53,27 @@ export default function Catalog() {
         <p style={{ color: "#64748b", margin: "6px 0 0", fontSize: "14px" }}>Цифровой каталог гидротехнических сооружений</p>
       </div>
 
-      {/* Filters */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
         <input
-          placeholder="🔍 Поиск по названию или району..."
-          value={search} onChange={(e) => setSearch(e.target.value)}
-          style={{ ...inputStyle, minWidth: "280px" }}
+          placeholder="🔍 Поиск..."
+          value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          style={{ ...inputStyle, minWidth: "240px" }}
         />
-        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={inputStyle}>
+        <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} style={inputStyle}>
           {types.map((t) => <option key={t} style={{ background: "#1e293b" }}>{t}</option>)}
         </select>
-        <select value={condFilter} onChange={(e) => setCondFilter(e.target.value)} style={inputStyle}>
+        <select value={condFilter} onChange={(e) => { setCondFilter(e.target.value); setPage(1); }} style={inputStyle}>
           {conditions.map((c) => (
             <option key={c} value={c} style={{ background: "#1e293b" }}>
               {c === "Все" ? "Все состояния" : conditionLabel[c]}
             </option>
           ))}
         </select>
-        <div style={{ display: "flex", alignItems: "center", color: "#64748b", fontSize: "13px" }}>
+        <span style={{ color: "#64748b", fontSize: "13px", marginLeft: "auto" }}>
           {filtered.length} объектов
-        </div>
+        </span>
       </div>
 
-      {/* Table */}
       <div style={{ background: "#1e293b", borderRadius: "16px", overflow: "hidden", border: "1px solid #334155" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -79,9 +84,9 @@ export default function Catalog() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((s, i) => (
+            {paginated.map((s) => (
               <tr key={s.id}
-                style={{ borderTop: "1px solid #334155", transition: "background 0.15s", cursor: "pointer" }}
+                style={{ borderTop: "1px solid #334155", cursor: "pointer", transition: "background 0.15s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "#263347")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 onClick={() => navigate(`/object/${s.id}`)}
@@ -97,9 +102,7 @@ export default function Catalog() {
                     color: conditionColor[s.condition],
                     padding: "4px 12px", borderRadius: "20px", fontWeight: 600, fontSize: "12px",
                     border: `1px solid ${conditionColor[s.condition]}44`
-                  }}>
-                    {conditionLabel[s.condition]}
-                  </span>
+                  }}>{conditionLabel[s.condition]}</span>
                 </td>
                 <td style={{ padding: "14px 16px", color: "#64748b", fontSize: "13px" }}>{s.risk_level}</td>
                 <td style={{ padding: "14px 16px" }}>
@@ -113,6 +116,28 @@ export default function Catalog() {
           <div style={{ padding: "48px", textAlign: "center", color: "#475569" }}>Объекты не найдены</div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+            style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #334155", background: "#1e293b", color: page === 1 ? "#475569" : "white", cursor: page === 1 ? "default" : "pointer" }}>
+            ←
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button key={p} onClick={() => setPage(p)}
+              style={{
+                padding: "8px 14px", borderRadius: "8px", border: "1px solid #334155",
+                background: p === page ? "#3b82f6" : "#1e293b",
+                color: "white", cursor: "pointer", fontWeight: p === page ? 700 : 400
+              }}>{p}</button>
+          ))}
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+            style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #334155", background: "#1e293b", color: page === totalPages ? "#475569" : "white", cursor: page === totalPages ? "default" : "pointer" }}>
+            →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
