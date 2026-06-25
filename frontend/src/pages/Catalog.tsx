@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { getStructures, getMeta } from "../api/structures";
 import type { Structure } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
-import axios from "axios";
 
 const MOCK: Structure[] = [
   { id: 1, name: "Большой Чуйский канал", type: "Канал", district: "Жамбылский", condition: "good", risk_level: "low", latitude: 42.85, longitude: 71.37 },
@@ -15,6 +14,14 @@ const MOCK: Structure[] = [
 ];
 
 const PAGE_SIZE = 10;
+
+// Если API вернёт массив объектов — берём строку из поля name_ru / name / code
+function normalizeStringList(data: any[]): string[] {
+  return data.map((item) => {
+    if (typeof item === "string") return item;
+    return item.name_ru ?? item.name ?? item.code ?? String(item);
+  });
+}
 
 export default function Catalog() {
   const [structures, setStructures] = useState<Structure[]>(MOCK);
@@ -29,9 +36,10 @@ export default function Catalog() {
 
   useEffect(() => {
     getStructures().then((res) => { if (res.data?.length) setStructures(res.data); }).catch(() => {});
-    // Загружаем типы из справочника
     getMeta("types").then((res) => {
-      if (res.data?.length) setTypes(["Все", ...res.data]);
+      if (Array.isArray(res.data) && res.data.length) {
+        setTypes(["Все", ...normalizeStringList(res.data)]);
+      }
     }).catch(() => {});
   }, []);
 
@@ -62,7 +70,6 @@ export default function Catalog() {
           <h1 style={{ fontSize: "24px", color: "var(--gray-900)", marginBottom: "4px" }}>Каталог объектов</h1>
           <p style={{ color: "var(--gray-500)", fontSize: "13px" }}>Цифровой реестр гидротехнических сооружений</p>
         </div>
-        {/* Export buttons */}
         <div style={{ display: "flex", gap: "8px" }}>
           {[
             { fmt: "csv", label: "CSV", color: "#16a34a" },
@@ -78,14 +85,13 @@ export default function Catalog() {
         </div>
       </div>
 
-      {/* Filters */}
       <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "16px 20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ position: "relative", flex: 1, minWidth: "220px" }}>
           <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--gray-400)", fontSize: "15px", pointerEvents: "none" }}>🔍</span>
           <input placeholder="Поиск..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} style={{ ...selectStyle, paddingLeft: "36px", width: "100%" }} />
         </div>
         <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} style={selectStyle}>
-          {types.map((t) => <option key={t}>{t}</option>)}
+          {types.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
         <select value={condFilter} onChange={(e) => { setCondFilter(e.target.value); setPage(1); }} style={selectStyle}>
           {conditions.map((c) => <option key={c} value={c}>{c === "Все" ? "Все состояния" : conditionLabel[c]}</option>)}
@@ -93,13 +99,12 @@ export default function Catalog() {
         <div style={{ marginLeft: "auto", background: "var(--primary-bg)", color: "var(--primary)", padding: "6px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 600, border: "1px solid #bfdbfe" }}>{filtered.length} объектов</div>
       </div>
 
-      {/* Table */}
       <div style={{ background: "white", borderRadius: "var(--radius-lg)", overflow: "hidden", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "var(--gray-50)", borderBottom: "2px solid var(--gray-200)" }}>
-              {["Название", "Тип", "Район", "Состояние", "Риск", ""].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "var(--gray-500)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase" }}>{h}</th>
+              {["Название", "Тип", "Район", "Состояние", "Риск", ""].map((h, i) => (
+                <th key={i} style={{ padding: "12px 16px", textAlign: "left", color: "var(--gray-500)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
