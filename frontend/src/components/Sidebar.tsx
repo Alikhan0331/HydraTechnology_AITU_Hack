@@ -5,6 +5,7 @@ const links = [
   { to: "/catalog", label: "Каталог", icon: "📋", desc: "Все объекты" },
   { to: "/analytics", label: "Аналитика", icon: "📈", desc: "Графики и тренды" },
   { to: "/detection", label: "Обнаружение", icon: "🔍", desc: "Поиск по координатам" },
+  { to: "/import", label: "Импорт", icon: "📥", desc: "Загрузка данных" },
 ];
 
 export default function Sidebar() {
