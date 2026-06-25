@@ -1,0 +1,1 @@
+export default function ObjectDetails() { return <h1>Object Details</h1>; }
