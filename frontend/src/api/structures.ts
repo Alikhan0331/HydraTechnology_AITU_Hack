@@ -13,6 +13,24 @@ export interface Structure {
   longitude: number;
 }
 
+export interface ForecastPoint {
+  months: number;
+  risk_score: number;
+  risk_level: string;
+}
+
+export interface ForecastData {
+  structure_id: number;
+  name: string;
+  current_risk: number;
+  current_level: string;
+  forecast: ForecastPoint[];
+  prob_critical: number;
+  residual_life_years: number;
+  recommendation: string;
+  methodology: string;
+}
+
 export const getStructures = (params?: Record<string, string>) =>
   axios.get(`${BASE}/structures`, { params }).catch(() => ({ data: [] }));
 
@@ -81,3 +99,7 @@ export const addStructureFromOSM = (data: {
   source: data.source,
   confidence: data.confidence,
 });
+
+// Predictive Infrastructure Engine
+export const getForecast = (id: number) =>
+  axios.get<ForecastData>(`${BASE}/forecast/${id}`);

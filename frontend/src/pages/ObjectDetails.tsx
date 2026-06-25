@@ -6,6 +6,8 @@ import {
   recomputeRisk,
   deleteStructure,
   addInspection,
+  getForecast,
+  ForecastData,
 } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
 
@@ -49,6 +51,9 @@ const statusColors: Record<string, string> = {
 const riskLevelLabel: Record<string, string> = {
   low: "Низкий", medium: "Средний", high: "Высокий", critical: "Критический",
 };
+const riskLevelColor: Record<string, string> = {
+  low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626",
+};
 const significanceLabel: Record<string, string> = {
   local: "Местный", regional: "Региональный", national: "Национальный",
 };
@@ -87,6 +92,147 @@ function InfoRow({ label, value, mono = false }: { label: string; value: any; mo
     <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", padding: "10px 0", borderBottom: "1px dashed var(--gray-200)", alignItems: "center" }}>
       <span style={{ fontSize: "12px", color: "var(--gray-500)", fontWeight: 600 }}>{label}</span>
       <span style={{ fontSize: "13px", color: "var(--gray-800)", fontWeight: 700, fontFamily: mono ? "monospace" : "inherit", textAlign: "right" }}>{value ?? "—"}</span>
+    </div>
+  );
+}
+
+// ─── Predictive Infrastructure Engine Block ──────────────────────────────────
+function PredictiveBlock({ structureId }: { structureId: number }) {
+  const [data, setData] = useState<ForecastData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    getForecast(structureId)
+      .then(res => { setData(res.data); setError(false); })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [structureId]);
+
+  if (loading) return (
+    <div style={{ background: "white", borderRadius: "var(--radius-xl)", padding: "28px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", display: "flex", alignItems: "center", gap: "12px", color: "var(--gray-400)" }}>
+      <span style={{ display: "inline-block", width: 18, height: 18, border: "2px solid #6366f1", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+      <span style={{ fontWeight: 600, fontSize: "14px" }}>Predictive Engine анализирует объект...</span>
+    </div>
+  );
+
+  if (error || !data) return (
+    <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "var(--radius-xl)", padding: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+      <span style={{ fontSize: "20px" }}>⚠️</span>
+      <span style={{ fontSize: "13px", color: "#9a3412", fontWeight: 600 }}>Predictive Engine недоступен — нет данных для прогноза</span>
+    </div>
+  );
+
+  const recColor = data.prob_critical >= 0.6 ? "#dc2626" : data.prob_critical >= 0.3 ? "#ea580c" : data.prob_critical >= 0.15 ? "#d97706" : "#16a34a";
+
+  // Mini SVG sparkline
+  const points = [data.current_risk, ...data.forecast.map(f => f.risk_score)];
+  const maxP = Math.max(...points, 100);
+  const svgW = 220; const svgH = 54;
+  const ptCoords = points.map((v, i) => {
+    const x = (i / (points.length - 1)) * (svgW - 20) + 10;
+    const y = svgH - 8 - ((v / maxP) * (svgH - 16));
+    return `${x},${y}`;
+  });
+  const polyline = ptCoords.join(" ");
+  const area = `${ptCoords[0]} ${ptCoords.slice(1).join(" ")} ${svgW - 10},${svgH} 10,${svgH}`;
+
+  return (
+    <div style={{ background: "white", borderRadius: "var(--radius-xl)", padding: "24px", border: "1px solid #e0e7ff", boxShadow: "0 2px 16px rgba(99,102,241,0.08)", position: "relative", overflow: "hidden" }}>
+      {/* Purple gradient accent */}
+      <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.12), transparent 70%)", pointerEvents: "none" }} />
+
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+            <span style={{ fontSize: "18px" }}>🔮</span>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 900, color: "#1e1b4b" }}>Predictive Infrastructure Engine</h3>
+          </div>
+          <p style={{ margin: 0, fontSize: "12px", color: "#6366f1", fontWeight: 500 }}>{data.methodology}</p>
+        </div>
+        <span style={{
+          background: recColor + "18", color: recColor, border: `1px solid ${recColor}30`,
+          padding: "6px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, whiteSpace: "nowrap"
+        }}>
+          {data.recommendation}
+        </span>
+      </div>
+
+      {/* Main metrics row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "20px" }}>
+        {/* Current */}
+        <div style={{ background: "#f8fafc", borderRadius: "14px", padding: "16px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: "4px" }}>
+          <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px" }}>Текущий риск</span>
+          <span style={{ fontSize: "32px", fontWeight: 900, color: riskLevelColor[data.current_level] || "#64748b", lineHeight: 1 }}>{data.current_risk}</span>
+          <span style={{ fontSize: "11px", color: riskLevelColor[data.current_level], fontWeight: 700 }}>{riskLevelLabel[data.current_level] || data.current_level}</span>
+        </div>
+        {/* Probability critical */}
+        <div style={{ background: recColor + "08", borderRadius: "14px", padding: "16px", border: `1px solid ${recColor}22`, display: "flex", flexDirection: "column", gap: "4px" }}>
+          <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px" }}>Вероятность критич.</span>
+          <span style={{ fontSize: "32px", fontWeight: 900, color: recColor, lineHeight: 1 }}>{Math.round(data.prob_critical * 100)}%</span>
+          <span style={{ fontSize: "11px", color: recColor, fontWeight: 700 }}>за 24 месяца</span>
+        </div>
+        {/* Residual life */}
+        <div style={{ background: "#f0fdf4", borderRadius: "14px", padding: "16px", border: "1px solid #bbf7d0", display: "flex", flexDirection: "column", gap: "4px" }}>
+          <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px" }}>Остаточный ресурс</span>
+          <span style={{ fontSize: "32px", fontWeight: 900, color: data.residual_life_years < 5 ? "#dc2626" : data.residual_life_years < 15 ? "#d97706" : "#16a34a", lineHeight: 1 }}>{data.residual_life_years}</span>
+          <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: 700 }}>лет службы</span>
+        </div>
+      </div>
+
+      {/* Forecast timeline */}
+      <div style={{ marginBottom: "16px" }}>
+        <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px", marginBottom: "10px" }}>Прогноз деградации</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+          {data.forecast.map(fp => {
+            const fc = riskLevelColor[fp.risk_level] || "#64748b";
+            const pct = Math.min(fp.risk_score, 100);
+            return (
+              <div key={fp.months} style={{ background: "#f8fafc", borderRadius: "12px", padding: "14px", border: `1px solid ${fc}28`, position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", bottom: 0, left: 0, height: `${pct}%`, width: "100%", background: fc + "10", transition: "height .5s" }} />
+                <div style={{ position: "relative" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 700, marginBottom: "4px" }}>{fp.months} мес.</div>
+                  <div style={{ fontSize: "26px", fontWeight: 900, color: fc, lineHeight: 1 }}>{fp.risk_score}</div>
+                  <div style={{ fontSize: "10px", color: fc, fontWeight: 700, marginTop: "4px", textTransform: "uppercase" }}>{riskLevelLabel[fp.risk_level] || fp.risk_level}</div>
+                  <div style={{ height: 4, background: "#e2e8f0", borderRadius: 999, marginTop: 8 }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${fc}88, ${fc})`, borderRadius: 999 }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Sparkline chart */}
+      <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "14px 16px", border: "1px solid #e2e8f0" }}>
+        <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.7px", marginBottom: "8px" }}>Траектория риска: сейчас → +6м → +12м → +24м</div>
+        <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ display: "block", overflow: "visible" }}>
+          <defs>
+            <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          <polygon points={area} fill="url(#sparkGrad)" />
+          <polyline points={polyline} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+          {points.map((v, i) => {
+            const [x, y] = ptCoords[i].split(",").map(Number);
+            const fc = i === 0 ? "#6366f1" : riskLevelColor[data.forecast[i - 1]?.risk_level] || "#6366f1";
+            return (
+              <g key={i}>
+                <circle cx={x} cy={y} r={4} fill={fc} stroke="white" strokeWidth={1.5} />
+                <text x={x} y={y - 8} textAnchor="middle" fontSize="9" fill="#64748b" fontWeight="700">{v}</text>
+              </g>
+            );
+          })}
+        </svg>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#94a3b8", fontWeight: 600, marginTop: "2px" }}>
+          <span>Сейчас</span><span>+6 мес.</span><span>+12 мес.</span><span>+24 мес.</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -241,7 +387,6 @@ export default function ObjectDetails() {
   };
 
   const handleInspectionSaved = (newInsp: any) => {
-    // Map backend fields to frontend shape
     const mapped = {
       date: newInsp.date,
       inspector: newInsp.inspector,
@@ -249,7 +394,6 @@ export default function ObjectDetails() {
       condition: newInsp.condition_found,
     };
     setObj((prev: any) => ({ ...prev, inspections: [mapped, ...(prev.inspections || [])] }));
-    // Reload risk since condition/wear may have changed
     getStructureRisk(Number(id)).then(res => setRisk(normalizeRisk(res.data))).catch(() => {});
   };
 
@@ -260,19 +404,16 @@ export default function ObjectDetails() {
   const efficiencyLoss = (obj.efficiency_design && obj.efficiency_actual)
     ? Math.max(0, Math.round((obj.efficiency_design - obj.efficiency_actual) * 100)) : null;
 
-  // Build export URL respecting current object context
   const exportUrl = (fmt: string) => `${BASE_URL}/api/reports/structures.${fmt}`;
 
   return (
     <div style={{ padding: "32px", background: "var(--gray-50)", minHeight: "100vh" }}>
-      {/* Risk Toast */}
       {riskToast && (
         <div style={{ position: "fixed", top: "24px", right: "24px", zIndex: 2000, background: "white", border: "1px solid var(--gray-200)", borderRadius: "10px", padding: "12px 18px", boxShadow: "0 8px 32px rgba(0,0,0,0.12)", fontSize: "14px", fontWeight: 600, color: "var(--gray-800)" }}>
           {riskToast}
         </div>
       )}
 
-      {/* Add Inspection Modal */}
       {showInspModal && (
         <AddInspectionModal
           structureId={Number(id)}
@@ -281,7 +422,6 @@ export default function ObjectDetails() {
         />
       )}
 
-      {/* Delete Modal */}
       {showDeleteModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "white", borderRadius: "12px", padding: "32px", maxWidth: "400px", width: "90%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
@@ -313,7 +453,6 @@ export default function ObjectDetails() {
           {/* Hero card */}
           <div style={{ background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)", borderRadius: "var(--radius-xl)", padding: "28px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -60, right: -60, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.16), rgba(59,130,246,0))" }} />
-
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "18px", flexWrap: "wrap", gap: "12px", position: "relative" }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
@@ -328,7 +467,6 @@ export default function ObjectDetails() {
                   <span>№ {obj.id}</span>
                 </div>
               </div>
-
               <div style={{ minWidth: "210px", background: "rgba(255,255,255,0.9)", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", borderRadius: "16px", padding: "16px" }}>
                 <div style={{ fontSize: "11px", color: "var(--gray-400)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.7px", marginBottom: "6px" }}>Inspection Score</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "10px" }}>
@@ -341,14 +479,12 @@ export default function ObjectDetails() {
                 <div style={{ fontSize: "12px", color: "var(--gray-500)", lineHeight: 1.5 }}>Следующий осмотр: <b style={{ color: "var(--gray-800)" }}>{obj.next_inspection || risk?.next_inspection || "не назначен"}</b></div>
               </div>
             </div>
-
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "10px", marginBottom: "18px" }}>
               <StatPill label="Возраст" value={ageYears ? `${ageYears} лет` : "—"} color="#2563eb" />
               <StatPill label="Износ" value={obj.wear_percent != null ? `${obj.wear_percent}%` : "—"} color="#ea580c" />
               <StatPill label="Пропускная способность" value={obj.capacity != null ? `${obj.capacity} м³/с` : "—"} color="#0891b2" />
               <StatPill label="Охват" value={obj.area_ha != null ? `${obj.area_ha} га` : "—"} color="#16a34a" />
             </div>
-
             <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "14px", padding: "14px 16px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <span style={{ fontSize: "18px" }}>📍</span>
@@ -359,7 +495,6 @@ export default function ObjectDetails() {
               </div>
               <button onClick={handleViewOnMap} style={{ padding: "8px 16px", borderRadius: "10px", border: "none", background: "#15803d", color: "white", fontWeight: 700, fontSize: "12px", cursor: "pointer" }}>🗺️ Открыть на карте</button>
             </div>
-
             <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: "16px", alignItems: "start" }}>
               <div style={{ background: "white", borderRadius: "16px", padding: "18px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
                 <div style={{ fontSize: "12px", color: "var(--gray-400)", textTransform: "uppercase", letterSpacing: "0.7px", fontWeight: 800, marginBottom: "10px" }}>Паспорт объекта</div>
@@ -385,6 +520,9 @@ export default function ObjectDetails() {
             </div>
           </div>
 
+          {/* ✅ PREDICTIVE INFRASTRUCTURE ENGINE */}
+          {id && <PredictiveBlock structureId={Number(id)} />}
+
           {/* Risk Analytics */}
           <div style={{ background: "white", borderRadius: "var(--radius-xl)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "8px" }}>
@@ -394,18 +532,11 @@ export default function ObjectDetails() {
               </div>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                 <span style={{ background: recColor + "15", color: recColor, padding: "6px 12px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, border: `1px solid ${recColor}22` }}>{risk?.recommendation || "Рекомендация формируется"}</span>
-                {/* ✅ Recompute Risk Button */}
-                <button
-                  onClick={handleRecomputeRisk}
-                  disabled={recomputingRisk}
-                  title="Пересчитать риск на основе актуальных данных"
-                  style={{ padding: "7px 14px", borderRadius: "8px", border: "1px solid #e0e7ff", background: recomputingRisk ? "#e0e7ff" : "#eef2ff", color: "#4338ca", fontWeight: 700, fontSize: "12px", cursor: recomputingRisk ? "default" : "pointer", display: "flex", alignItems: "center", gap: "5px", transition: "all .15s" }}
-                >
+                <button onClick={handleRecomputeRisk} disabled={recomputingRisk} style={{ padding: "7px 14px", borderRadius: "8px", border: "1px solid #e0e7ff", background: recomputingRisk ? "#e0e7ff" : "#eef2ff", color: "#4338ca", fontWeight: 700, fontSize: "12px", cursor: recomputingRisk ? "default" : "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
                   {recomputingRisk ? "⏳" : "🔄"} Пересчитать
                 </button>
               </div>
             </div>
-
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div style={{ background: "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)", borderRadius: "16px", border: "1px solid var(--gray-200)", padding: "18px" }}>
                 <div style={{ fontSize: "12px", color: "var(--gray-400)", textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.7px", marginBottom: "12px" }}>Ключевые показатели</div>
@@ -439,7 +570,6 @@ export default function ObjectDetails() {
 
         {/* ── Right column ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Record status */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 12px", fontWeight: 700 }}>📌 Статус записи</h3>
             <InfoRow label="Источник" value={sourceLabel[obj.source] || obj.source || "—"} />
@@ -449,8 +579,6 @@ export default function ObjectDetails() {
             <InfoRow label="Создано" value={obj.created_at ? new Date(obj.created_at).toLocaleDateString() : "—"} />
             <InfoRow label="Обновлено" value={obj.updated_at ? new Date(obj.updated_at).toLocaleDateString() : "—"} />
           </div>
-
-          {/* Export — full catalog filtered or object-level */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 4px", fontWeight: 700 }}>📥 Экспорт отчёта</h3>
             <p style={{ fontSize: "12px", color: "var(--gray-400)", margin: "0 0 12px" }}>Полный реестр с применением фильтров</p>
@@ -467,13 +595,10 @@ export default function ObjectDetails() {
               ))}
             </div>
           </div>
-
-          {/* Inspection history */}
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
               <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: 0, fontWeight: 700 }}>📋 История обследований</h3>
-              <button onClick={() => setShowInspModal(true)}
-                style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #a5f3fc", background: "#ecfeff", color: "#0891b2", fontWeight: 700, fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>+ Добавить</button>
+              <button onClick={() => setShowInspModal(true)} style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #a5f3fc", background: "#ecfeff", color: "#0891b2", fontWeight: 700, fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>+ Добавить</button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {(obj.inspections || []).length === 0 && (
@@ -493,6 +618,7 @@ export default function ObjectDetails() {
           </div>
         </div>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes fadeIn { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:scale(1); } }`}</style>
     </div>
   );
 }
