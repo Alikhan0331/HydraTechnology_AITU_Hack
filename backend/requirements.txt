@@ -15,6 +15,7 @@ pydantic-settings>=2.7
 python-dotenv>=1.0
 httpx>=0.28
 openpyxl>=3.1
+xlrd>=2.0          # legacy .xls import (e.g. the original датасет.xls)
 fpdf2>=2.8
 python-multipart>=0.0.9
 

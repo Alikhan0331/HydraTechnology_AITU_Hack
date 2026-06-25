@@ -56,13 +56,23 @@ def _norm_name(name: str | None) -> str:
 
 
 def _name_similar(a: str | None, b: str | None) -> bool:
+    """Strict name match: equal / containment / high token overlap that includes
+    a meaningful (non-numeric) shared word. Avoids false matches on a shared
+    river name ('Талас') or a shared number ('№77')."""
     na, nb = _norm_name(a), _norm_name(b)
     if not na or not nb:
         return False
-    if na in nb or nb in na:
+    if na == nb:
+        return True
+    if (na in nb or nb in na) and abs(len(na) - len(nb)) <= 4:
         return True
     ta, tb = set(na.split()), set(nb.split())
-    return bool(ta & tb) and len(ta & tb) >= min(len(ta), len(tb)) / 2
+    if not ta or not tb:
+        return False
+    inter = ta & tb
+    jaccard = len(inter) / len(ta | tb)
+    meaningful = any(not t.isdigit() and len(t) >= 4 for t in inter)
+    return jaccard >= 0.6 and meaningful
 
 
 # --- 1. Catalog objects within the radius -----------------------------------
