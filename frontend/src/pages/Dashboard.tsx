@@ -29,17 +29,21 @@ const FALLBACK_TOP_RISK = [
 ];
 
 export default function Dashboard() {
-  const [summary, setSummary] = useState<any>(null);
+  const [summary, setSummary] = useState<any>(FALLBACK_SUMMARY);
   const [trend, setTrend] = useState<any[]>(FALLBACK_TREND);
   const [topRisk, setTopRisk] = useState<any[]>(FALLBACK_TOP_RISK);
 
   useEffect(() => {
-    getSummary().then((r) => setSummary(r.data)).catch(() => setSummary(FALLBACK_SUMMARY));
-    getAnalyticsDynamics().then((r) => setTrend(r.data)).catch(() => {});
-    getTopRisk().then((r) => setTopRisk(r.data)).catch(() => {});
+    getSummary().then((r) => {
+      if (r.data && r.data.total) setSummary(r.data);
+    }).catch(() => {});
+    getAnalyticsDynamics().then((r) => {
+      if (Array.isArray(r.data) && r.data.length > 0) setTrend(r.data);
+    }).catch(() => {});
+    getTopRisk().then((r) => {
+      if (Array.isArray(r.data) && r.data.length > 0) setTopRisk(r.data);
+    }).catch(() => {});
   }, []);
-
-  if (!summary) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: "var(--gray-400)" }}>Загрузка...</div>;
 
   const condIcons: Record<string, string> = { good: "✅", monitoring: "👁️", requires_repair: "🔧", emergency: "🚨" };
   const pieData = Object.entries(summary.by_condition).map(([key, val]) => ({ name: conditionLabel[key], value: val as number, color: conditionColor[key] }));
@@ -114,7 +118,6 @@ export default function Dashboard() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-        {/* Trend chart */}
         <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
           <h3 style={{ fontSize: "15px", color: "var(--gray-900)", marginBottom: "3px" }}>Динамика состояния</h3>
           <p style={{ fontSize: "12px", color: "var(--gray-400)", marginBottom: "16px" }}>Тренд за 6 месяцев</p>
@@ -134,7 +137,6 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Top Risk */}
         <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
           <h3 style={{ fontSize: "15px", color: "var(--gray-900)", marginBottom: "3px" }}>🚨 Топ рисковых объектов</h3>
           <p style={{ fontSize: "12px", color: "var(--gray-400)", marginBottom: "16px" }}>Требуют немедленного внимания</p>
