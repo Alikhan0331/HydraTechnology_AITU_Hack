@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getStructure } from "../api/structures";
-import type { Structure } from "../api/structures";
+import { getStructure, getStructureRisk } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
+import axios from "axios";
 
 interface Inspection { date: string; inspector: string; result: string; condition: string; }
 
@@ -10,64 +10,68 @@ const MOCK: any = {
   id: 1, name: "Большой Чуйский канал", type: "Канал", district: "Жамбылский",
   condition: "good", risk_level: "low", latitude: 42.85, longitude: 71.37,
   length_km: 120.5, year_built: 1958, last_inspection: "2024-03-15",
-  description: "Главный ирригационный канал Жамбылского региона. Обеспечивает водоснабжение 45 000 га сельскохозяйственных угодий.",
+  description: "Главный ирригационный канал Жамбылского региона.",
   inspections: [
     { date: "2024-03-15", inspector: "Ахметов Б.", result: "Плановый осмотр. Нарушений не выявлено.", condition: "good" },
-    { date: "2023-09-10", inspector: "Сейткали Д.", result: "Мелкие трещины в облицовке. Рекомендован ремонт.", condition: "monitoring" },
-    { date: "2023-02-20", inspector: "Каратаев M.", result: "Состояние удовлетворительное.", condition: "good" },
+    { date: "2023-09-10", inspector: "Сейткали Д.", result: "Мелкие трещины. Рекомендован ремонт.", condition: "monitoring" },
   ]
+};
+
+const MOCK_RISK: any = {
+  risk_score: 72,
+  recommendation: "Требуется осмотр",
+  next_inspection: "2024-09-15",
+  factors: [
+    { name: "Возраст сооружения", value: 66, weight: 0.25, score: 16 },
+    { name: "Дата последнего осмотра", value: "2024-03-15", weight: 0.3, score: 20 },
+    { name: "Текущее состояние", value: "Норма", weight: 0.3, score: 20 },
+    { name: "Аварийность", value: "Низкая", weight: 0.15, score: 10 },
+  ]
+};
+
+const statusColors: Record<string, string> = {
+  "Норма": "#16a34a",
+  "Требуется осмотр": "#d97706",
+  "Требуется ремонт": "#ea580c",
+  "Критическое состояние": "#dc2626",
 };
 
 export default function ObjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [obj, setObj] = useState<any>(MOCK);
+  const [risk, setRisk] = useState<any>(MOCK_RISK);
 
   useEffect(() => {
-    if (id) getStructure(Number(id)).then((res) => setObj({ ...MOCK, ...res.data })).catch(() => {});
+    if (id) {
+      getStructure(Number(id)).then((res) => setObj({ ...MOCK, ...res.data })).catch(() => {});
+      getStructureRisk(Number(id)).then((res) => setRisk(res.data)).catch(() => {});
+    }
   }, [id]);
+
+  const recColor = statusColors[risk?.recommendation] || "#d97706";
 
   return (
     <div style={{ padding: "32px", background: "var(--gray-50)", minHeight: "100vh" }}>
-      {/* Back button */}
-      <button onClick={() => navigate(-1)} style={{
-        marginBottom: "24px", background: "white", border: "1px solid var(--gray-200)",
-        padding: "8px 16px", borderRadius: "var(--radius-sm)", cursor: "pointer",
-        color: "var(--gray-600)", fontSize: "13px", display: "flex", alignItems: "center",
-        gap: "6px", boxShadow: "var(--shadow-sm)", fontWeight: 500
-      }}>← Назад к каталогу</button>
+      <button onClick={() => navigate(-1)} style={{ marginBottom: "24px", background: "white", border: "1px solid var(--gray-200)", padding: "8px 16px", borderRadius: "var(--radius-sm)", cursor: "pointer", color: "var(--gray-600)", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px", boxShadow: "var(--shadow-sm)", fontWeight: 500 }}>← Назад</button>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "20px" }}>
         {/* Main */}
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Header card */}
-          <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "28px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", marginBottom: "16px" }}>
+          <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "28px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
               <div>
                 <h1 style={{ fontSize: "22px", color: "var(--gray-900)", margin: "0 0 8px" }}>{obj.name}</h1>
                 <span style={{ background: "var(--primary-bg)", color: "var(--primary)", padding: "4px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, border: "1px solid #bfdbfe" }}>{obj.type}</span>
               </div>
-              <span style={{
-                background: conditionColor[obj.condition] + "18",
-                color: conditionColor[obj.condition],
-                padding: "8px 18px", borderRadius: "10px",
-                fontWeight: 700, fontSize: "13px",
-                border: `1px solid ${conditionColor[obj.condition]}30`
-              }}>{conditionLabel[obj.condition]}</span>
+              <span style={{ background: conditionColor[obj.condition] + "18", color: conditionColor[obj.condition], padding: "8px 18px", borderRadius: "10px", fontWeight: 700, fontSize: "13px", border: `1px solid ${conditionColor[obj.condition]}30` }}>{conditionLabel[obj.condition]}</span>
             </div>
-
-            {/* Photo */}
-            <div style={{
-              background: "var(--gray-50)", borderRadius: "var(--radius-md)", height: "200px",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              border: "2px dashed var(--gray-200)", marginBottom: "20px", flexDirection: "column", gap: "8px"
-            }}>
+            <div style={{ background: "var(--gray-50)", borderRadius: "var(--radius-md)", height: "180px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px dashed var(--gray-200)", marginBottom: "20px", flexDirection: "column", gap: "8px" }}>
               <span style={{ fontSize: "48px" }}>📷</span>
               <span style={{ color: "var(--gray-400)", fontSize: "13px", fontWeight: 500 }}>Фото объекта</span>
             </div>
-
-            {/* Info grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "20px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
               {[
                 { label: "📍 Район", value: obj.district },
                 { label: "🌐 Координаты", value: `${obj.latitude}, ${obj.longitude}` },
@@ -82,37 +86,87 @@ export default function ObjectDetails() {
                 </div>
               ))}
             </div>
-
-            {obj.description && (
-              <div style={{ background: "var(--primary-bg)", borderRadius: "var(--radius-sm)", padding: "16px", border: "1px solid #bfdbfe" }}>
-                <div style={{ fontSize: "11px", color: "var(--primary)", marginBottom: "6px", fontWeight: 700 }}>📝 Описание</div>
-                <p style={{ color: "var(--gray-700)", lineHeight: 1.7, margin: 0, fontSize: "13px" }}>{obj.description}</p>
-              </div>
-            )}
           </div>
+
+          {/* Risk & Inspection model */}
+          {risk && (
+            <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "24px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
+              <h3 style={{ fontSize: "15px", color: "var(--gray-900)", margin: "0 0 16px" }}>🛡️ Модель риска и осмотра</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "20px" }}>
+                {/* Risk score */}
+                <div style={{ background: "var(--gray-50)", borderRadius: "var(--radius-sm)", padding: "16px", border: "1px solid var(--gray-200)", textAlign: "center" }}>
+                  <div style={{ fontSize: "11px", color: "var(--gray-400)", marginBottom: "8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Индекс риска</div>
+                  <div style={{ fontSize: "36px", fontFamily: "Manrope", fontWeight: 900, color: recColor, lineHeight: 1 }}>{risk.risk_score}</div>
+                  <div style={{ fontSize: "11px", color: "var(--gray-400)", marginTop: "4px" }}>из 100</div>
+                </div>
+                {/* Recommendation */}
+                <div style={{ background: recColor + "0f", borderRadius: "var(--radius-sm)", padding: "16px", border: `1px solid ${recColor}30`, textAlign: "center" }}>
+                  <div style={{ fontSize: "11px", color: "var(--gray-400)", marginBottom: "8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Статус</div>
+                  <div style={{ fontSize: "14px", fontWeight: 800, color: recColor }}>{risk.recommendation}</div>
+                </div>
+                {/* Next inspection */}
+                <div style={{ background: "var(--primary-bg)", borderRadius: "var(--radius-sm)", padding: "16px", border: "1px solid #bfdbfe", textAlign: "center" }}>
+                  <div style={{ fontSize: "11px", color: "var(--gray-400)", marginBottom: "8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>След. осмотр</div>
+                  <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--primary)" }}>{risk.next_inspection}</div>
+                </div>
+              </div>
+              {/* Factor bars */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {(risk.factors || []).map((f: any, i: number) => (
+                  <div key={i}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <span style={{ fontSize: "12px", color: "var(--gray-600)", fontWeight: 500 }}>{f.name}</span>
+                      <span style={{ fontSize: "12px", color: "var(--gray-400)" }}>{f.score} / {Math.round(f.weight * 100)}</span>
+                    </div>
+                    <div style={{ height: 6, background: "var(--gray-100)", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${(f.score / (f.weight * 100)) * 100}%`, background: "var(--primary-light)", borderRadius: 3, transition: "width 0.5s" }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Inspection history */}
-        <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)", height: "fit-content" }}>
-          <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 16px" }}>📋 История обследований</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {(obj.inspections || []).map((insp: Inspection, i: number) => (
-              <div key={i} style={{
-                background: "var(--gray-50)", borderRadius: "var(--radius-sm)", padding: "14px",
-                border: "1px solid var(--gray-200)",
-                borderLeft: `3px solid ${conditionColor[insp.condition]}`
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span style={{ color: "var(--gray-500)", fontSize: "11px", fontWeight: 500 }}>{insp.date}</span>
-                  <span style={{ color: conditionColor[insp.condition], fontSize: "11px", fontWeight: 700,
-                    background: conditionColor[insp.condition] + "18", padding: "2px 8px", borderRadius: "10px" }}>
-                    {conditionLabel[insp.condition]}
-                  </span>
+        {/* Right column: Inspection history + Export */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Export */}
+          <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
+            <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 12px", fontWeight: 700 }}>📥 Экспорт отчёта</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {[
+                { fmt: "csv", label: "Скачать CSV", icon: "📄", color: "#16a34a" },
+                { fmt: "xlsx", label: "Скачать Excel", icon: "📊", color: "#1d4ed8" },
+                { fmt: "pdf", label: "Скачать PDF", icon: "📃", color: "#dc2626" },
+              ].map(({ fmt, label, icon, color }) => (
+                <a key={fmt}
+                  href={`http://localhost:8000/api/reports/structures.${fmt}?id=${id}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "var(--radius-sm)", border: `1px solid ${color}30`, background: color + "08", color, fontWeight: 600, fontSize: "13px", textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.background = color + "18"}
+                  onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.background = color + "08"}
+                >
+                  <span>{icon}</span> {label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Inspection history */}
+          <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
+            <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 16px", fontWeight: 700 }}>📋 История обследований</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {(obj.inspections || []).map((insp: Inspection, i: number) => (
+                <div key={i} style={{ background: "var(--gray-50)", borderRadius: "var(--radius-sm)", padding: "14px", border: "1px solid var(--gray-200)", borderLeft: `3px solid ${conditionColor[insp.condition]}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                    <span style={{ color: "var(--gray-500)", fontSize: "11px", fontWeight: 500 }}>{insp.date}</span>
+                    <span style={{ color: conditionColor[insp.condition], fontSize: "11px", fontWeight: 700, background: conditionColor[insp.condition] + "18", padding: "2px 8px", borderRadius: "10px" }}>{conditionLabel[insp.condition]}</span>
+                  </div>
+                  <div style={{ color: "var(--gray-500)", fontSize: "11px", marginBottom: "4px" }}>👤 {insp.inspector}</div>
+                  <div style={{ color: "var(--gray-700)", fontSize: "12px", lineHeight: 1.5 }}>{insp.result}</div>
                 </div>
-                <div style={{ color: "var(--gray-500)", fontSize: "11px", marginBottom: "4px" }}>👤 {insp.inspector}</div>
-                <div style={{ color: "var(--gray-700)", fontSize: "12px", lineHeight: 1.5 }}>{insp.result}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -1,18 +1,6 @@
 import axios from "axios";
 
-const API = axios.create({ baseURL: "http://localhost:8000/api" });
-
-export const getStructures = (params?: object) =>
-  API.get("/structures", { params });
-
-export const getStructure = (id: number) =>
-  API.get(`/structures/${id}`);
-
-export const getMapData = () =>
-  API.get("/structures/map");
-
-export const getSummary = () =>
-  API.get("/analytics/summary");
+const BASE = "http://localhost:8000/api";
 
 export interface Structure {
   id: number;
@@ -23,8 +11,34 @@ export interface Structure {
   risk_level: string;
   latitude: number;
   longitude: number;
-  length_km?: number;
-  year_built?: number;
-  last_inspection?: string;
-  description?: string;
 }
+
+export const getStructures = (params?: Record<string, string>) =>
+  axios.get(`${BASE}/structures`, { params }).catch(() => ({ data: [] }));
+
+export const getStructure = (id: number) =>
+  axios.get(`${BASE}/structures/${id}`);
+
+export const getMapData = () =>
+  axios.get(`${BASE}/structures/map`);
+
+export const getSummary = () =>
+  axios.get(`${BASE}/analytics/summary`);
+
+export const getAnalyticsDashboard = () =>
+  axios.get(`${BASE}/analytics/dashboard`);
+
+export const getAnalyticsCharts = () =>
+  axios.get(`${BASE}/analytics/charts`);
+
+export const getAnalyticsDynamics = () =>
+  axios.get(`${BASE}/analytics/dynamics`);
+
+export const getTopRisk = () =>
+  axios.get(`${BASE}/analytics/top-risk`);
+
+export const getStructureRisk = (id: number) =>
+  axios.get(`${BASE}/structures/${id}/risk`);
+
+export const getMeta = (key: string) =>
+  axios.get(`${BASE}/meta/${key}`);
