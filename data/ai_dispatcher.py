@@ -1,218 +1,364 @@
 import json
 import os
-from datetime import datetime
+import warnings
+import numpy as np
+from datetime import datetime, date
+
+warnings.filterwarnings('ignore')
 
 CURRENT_DATE = datetime(2026, 6, 25)
 CURRENT_YEAR = 2026
 
+CONDITION_MAP  = {'удов.': 1, 'не удов.': 2}
+IMPORTANCE_MAP = {'низкая': 1, 'средняя': 2, 'высокая': 3, 'критическая': 4}
+TYPE_RISK_MAP  = {
+    'канал': 1, 'гидропост': 1,
+    'шлюз': 3, 'водозабор': 3, 'насосная станция': 3,
+    'плотина': 4, 'дамба': 4,
+}
+
+# Веса из risk_engine.py
+W_AGE = 22; W_CONDITION = 38; W_WEAR = 18; W_EFFICIENCY = 12; W_INSPECTION = 10
+
 # ============================================
-# 1. Загрузка данных
+# ML — загрузка модели один раз при старте
 # ============================================
 
-def load_objects():
-    filepath = os.path.join(os.path.dirname(__file__), 'hydraulic_objects.json')
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+_model = _scaler = _features = None
 
-# ============================================
-# 2. Причины риска (Risk Reasons)
-# ============================================
+def _load_ml():
+    global _model, _scaler, _features
+    if _model is not None:
+        return
+    try:
+        import joblib
+        base = os.path.join(os.path.dirname(__file__), 'models')
+        _model    = joblib.load(os.path.join(base, 'risk_predictor.joblib'))
+        _scaler   = joblib.load(os.path.join(base, 'scaler.joblib'))
+        _features = joblib.load(os.path.join(base, 'feature_names.joblib'))
+    except Exception as e:
+        print(f"⚠️  ML модель не загружена: {e}")
 
-def get_risk_reasons(obj):
-    """
-    Возвращает список конкретных причин высокого риска объекта.
-    Каждая причина — это факт с пороговой проверкой.
-    """
-    reasons = []
-
+def test_model():
+    _load_ml()
+    if _model is not None:
+        print(f"✅ Модель загружена, признаки: {_features}")
+        # Тестовый объект
+        test_obj = {
+            'year_built': 1980,
+            'condition': 'не удов.',
+            'importance': 'высокая',
+            'type': 'канал',
+            'wear_percent': 0.7,
+            'last_inspection': '2020-01-01',
+            'capacity_m3s': 2.0,
+            'length_km': 10.0
+        }
+        score = ml_predict(test_obj)
+        print(f"🧪 Тестовый прогноз: {score}")
+    else:
+        print("❌ Модель НЕ загружена!")
+        
+def _obj_to_features(obj):
+    """Преобразует объект в вектор признаков — тот же маппинг что в ml_model.py"""
     year_built = obj.get('year_built')
-    if year_built:
-        age = CURRENT_YEAR - year_built
-        if age >= 60:
-            reasons.append(f"🏚️  Критический возраст: {age} лет (норма до 50)")
-        elif age >= 40:
-            reasons.append(f"⏳  Возраст > 40 лет: {age} лет — повышенный износ")
-
-    wear = obj.get('wear_percent', 0)
-    if wear is not None:
-        wear_pct = wear * 100
-        if wear_pct >= 80:
-            reasons.append(f"🔴  Критический износ: {wear_pct:.0f}% (аварийная зона)")
-        elif wear_pct >= 60:
-            reasons.append(f"🟠  Высокий износ: {wear_pct:.0f}% (требует ремонта)")
-        elif wear_pct >= 40:
-            reasons.append(f"🟡  Умеренный износ: {wear_pct:.0f}%")
-
-    condition = obj.get('condition')
-    if condition == 'не удов.':
-        reasons.append("⚠️  Неудовлетворительное техническое состояние")
+    age = (CURRENT_YEAR - year_built) if year_built else 35
 
     last_insp = obj.get('last_inspection')
     if last_insp:
         try:
-            insp_dt = datetime.fromisoformat(last_insp)
-            days = (CURRENT_DATE - insp_dt).days
-            months = days // 30
-            if days > 365 * 2:
-                reasons.append(f"🔍  Осмотр {days // 365} года(лет) назад — просрочен")
-            elif days > 365:
-                reasons.append(f"🔍  Осмотр {months} месяцев назад — требует обновления")
-            elif days > 180:
-                reasons.append(f"📋  Осмотр {months} месяцев назад")
+            insp_dt = datetime.fromisoformat(str(last_insp))
+            days_since = (CURRENT_DATE - insp_dt).days
         except Exception:
-            reasons.append("❓  Дата последнего осмотра неизвестна")
+            days_since = 365 * 2
     else:
-        reasons.append("❓  Осмотр никогда не проводился")
+        days_since = 365 * 3
 
-    importance = obj.get('importance')
+    return {
+        'age':                   age,
+        'days_since_inspection': days_since,
+        'condition_num':         CONDITION_MAP.get(obj.get('condition'), 1),
+        'importance_num':        IMPORTANCE_MAP.get(obj.get('importance'), 1),
+        'type_risk':             TYPE_RISK_MAP.get(obj.get('type'), 2),
+        'wear_percent':          obj.get('wear_percent') or 0.5,
+        'capacity_m3s':          obj.get('capacity_m3s') or 1.0,
+        'length_km':             obj.get('length_km') or 5.0,
+    }
+
+def ml_predict(obj):
+    """Возвращает Risk Score через ML модель."""
+    _load_ml()
+    if _model is None:
+        return obj.get('risk_score', 50)   # fallback на сохранённый
+    row = _obj_to_features(obj)
+    X = [[row[f] for f in _features]]
+    X_scaled = _scaler.transform(X)
+    score = _model.predict(X_scaled)[0]
+    return round(float(np.clip(score, 0, 100)), 1)
+
+# ============================================
+# Причины риска через ML feature contributions
+# ============================================
+
+def get_risk_reasons(obj):
+    """
+    Объясняет Risk Score через вклад каждого признака.
+    Баллы считаются внутри для сортировки, но наружу не выводятся.
+    """
+    feats = _obj_to_features(obj)
+    reasons = []  # (вес_для_сортировки, текст)
+
+    # Возраст
+    age = feats['age']
+    age_f = min(age / 70, 1.0)
+    age_w = W_AGE * age_f
+    if age_w >= 15:
+        reasons.append((age_w, f"🏚️  Критический возраст: {age} лет — объект за пределом расчётного срока службы"))
+    elif age_w >= 8:
+        reasons.append((age_w, f"⏳  Возраст {age} лет — повышенный естественный износ конструкций"))
+
+    # Состояние
+    cond = obj.get('condition', 'удов.')
+    cond_w = W_CONDITION * (CONDITION_MAP.get(cond, 1) - 1)
+    if cond_w > 0:
+        reasons.append((cond_w, f"⚠️  Техническое состояние: неудовлетворительное — требует вмешательства"))
+
+    # Износ
+    wear = feats['wear_percent']
+    wear_w = W_WEAR * wear
+    wear_pct = wear * 100
+    if wear_pct >= 80:
+        reasons.append((wear_w, f"🔴  Износ {wear_pct:.0f}% — критическая зона, высок риск внезапного отказа"))
+    elif wear_pct >= 60:
+        reasons.append((wear_w, f"🟠  Износ {wear_pct:.0f}% — требует ремонта в ближайшее время"))
+    elif wear_pct >= 40:
+        reasons.append((wear_w, f"🟡  Износ {wear_pct:.0f}% — умеренный, необходим регулярный мониторинг"))
+
+    # Инспекция
+    days = feats['days_since_inspection']
+    insp_w = W_INSPECTION * min(days / (5 * 365), 1.0)
+    months = days // 30
+    if months > 24:
+        reasons.append((insp_w, f"🔍  Последний осмотр {months} мес. назад — данные устарели, реальное состояние неизвестно"))
+    elif months > 12:
+        reasons.append((insp_w, f"📋  Осмотр {months} мес. назад — требует планового обновления"))
+
+    # Значимость
+    importance = obj.get('importance', 'низкая')
     if importance == 'критическая':
-        reasons.append("⚡  Критическая значимость — отказ парализует водоснабжение района")
+        reasons.append((5, "⚡  Критическая значимость — отказ парализует водоснабжение всего района"))
     elif importance == 'высокая':
-        reasons.append("⚡  Высокая значимость — обслуживает крупную ирригационную систему")
+        reasons.append((3, "⚡  Высокая значимость — обслуживает крупную ирригационную систему"))
 
+    # Тип
     obj_type = obj.get('type', '')
     if obj_type in ('плотина', 'дамба'):
-        reasons.append(f"🌊  Тип '{obj_type}' — отказ несёт угрозу затопления")
-    elif obj_type in ('насосная станция', 'шлюз', 'водозабор'):
-        reasons.append(f"⚙️  Тип '{obj_type}' — механически сложный, высок риск сбоя")
+        reasons.append((4, f"🌊  Тип '{obj_type}' — при разрушении возможно затопление прилегающих территорий"))
 
-    capacity = obj.get('capacity_m3s')
-    if capacity and capacity > 10:
-        reasons.append(f"💧  Высокая пропускная способность: {capacity} м³/с — аварийный выброс опасен")
-
-    return reasons if reasons else ["✅  Критических факторов риска не выявлено"]
+    reasons.sort(key=lambda x: -x[0])
+    return [r[1] for r in reasons] if reasons else ["✅  Критических факторов риска не выявлено"]
 
 # ============================================
-# 3. Сценарное моделирование
+# Сценарное моделирование ЧЕРЕЗ ML
 # ============================================
+
+def _degrade(obj, years):
+    """
+    Деградация объекта без ремонта на N лет.
+    СКОРРЕКТИРОВАННАЯ — более плавный рост риска.
+    """
+    from datetime import timedelta
+    import copy
+    d = copy.deepcopy(obj)
+    
+    # 1. Износ растёт МЕДЛЕННЕЕ
+    wear = d.get('wear_percent') or 0.5
+    already_bad = (d.get('condition') == 'не удов.')
+    
+    # Уменьшаем скорость: 2-3% в год вместо 5-7%
+    rate = 0.03 if already_bad else 0.02
+    new_wear = min(1.0, wear + rate * years)
+    d['wear_percent'] = round(new_wear, 3)
+    
+    # 2. Состояние ухудшается ПОСТЕПЕННО
+    # Только при износе > 80% (было 75%)
+    if new_wear >= 0.80:
+        d['condition'] = 'не удов.'
+    
+    # 3. Инспекция устаревает
+    last_insp = d.get('last_inspection')
+    if last_insp:
+        try:
+            dt = datetime.fromisoformat(str(last_insp))
+            d['last_inspection'] = (dt - timedelta(days=365 * years)).isoformat()
+        except:
+            pass
+    else:
+        d['last_inspection'] = (CURRENT_DATE - timedelta(days=365 * (3 + years))).isoformat()
+    
+    # 4. Объект стареет (НО МЕДЛЕННЕЕ — влияние на age меньше)
+    if d.get('year_built'):
+        # Сдвигаем год постройки, но не так сильно
+        d['year_built'] = d['year_built'] - int(years * 0.7)  # 70% от реального времени
+    
+    # 5. Гарантируем наличие всех полей для ML
+    d.setdefault('capacity_m3s', 1.0)
+    d.setdefault('length_km', 5.0)
+    d.setdefault('importance', 'средняя')
+    d.setdefault('type', 'канал')
+    
+    return d
+
+
+def _repair(obj):
+    """
+    Возвращает копию объекта после полного ремонта.
+    Износ снижается до 10%, состояние восстанавливается, инспекция проведена сегодня.
+    """
+    import copy
+    r = copy.deepcopy(obj)
+    r['wear_percent']    = 0.10
+    r['condition']       = 'удов.'
+    r['last_inspection'] = CURRENT_DATE.isoformat()
+    return r
+
 
 def scenario_no_repair(obj):
-    """Сценарий: что будет если НЕ ремонтировать"""
-    risk_score = obj.get('risk_score', 50)
-    risk_level = obj.get('risk_level', 'Средний')
-    wear = (obj.get('wear_percent') or 0) * 100
-    year_built = obj.get('year_built')
-    age = (CURRENT_YEAR - year_built) if year_built else 40
-    obj_type = obj.get('type', 'объект')
-
-    lines = ["━" * 45]
-    lines.append("🔴  СЦЕНАРИЙ: БЕЗ РЕМОНТА")
-    lines.append("━" * 45)
-
-    # Прогноз роста риска
-    risk_1y = min(100, risk_score * 1.15)
-    risk_3y = min(100, risk_score * 1.40)
-    risk_5y = min(100, risk_score * 1.70)
-
-    lines.append(f"\n📈  Прогноз роста Risk Score:")
-    lines.append(f"   Сейчас : {risk_score:.0f}")
-    lines.append(f"   +1 год  : {risk_1y:.0f}  {'⚠️' if risk_1y > 50 else ''}")
-    lines.append(f"   +3 года : {risk_3y:.0f}  {'🟠' if risk_3y > 65 else ''}")
-    lines.append(f"   +5 лет  : {risk_5y:.0f}  {'🔴 КРИТИЧЕСКИЙ' if risk_5y > 75 else ''}")
-
-    lines.append(f"\n⚠️  Последствия по времени:")
-
-    if risk_level in ('Высокий', 'Критический') or wear >= 60:
-        lines.append(f"   • 0–6 мес  : нарастание дефектов, утечки")
-        lines.append(f"   • 6–18 мес : выход из строя отдельных узлов")
-        lines.append(f"   • 1–3 года  : частичный или полный отказ {obj_type}а")
-        lines.append(f"   • 3–5 лет   : аварийная ситуация, нарушение водоснабжения")
+    """Прогноз без ремонта с ограничением роста"""
+    _load_ml()
+    
+    if _model is None:
+        return "❌ Модель не загружена!"
+    
+    score_now = ml_predict(obj)
+    
+    # Получаем деградированные объекты
+    obj_1y = _degrade(obj, 1)
+    obj_3y = _degrade(obj, 3)
+    obj_5y = _degrade(obj, 5)
+    
+    score_1y = ml_predict(obj_1y)
+    score_3y = ml_predict(obj_3y)
+    score_5y = ml_predict(obj_5y)
+    
+    # ⚠️ ОГРАНИЧЕНИЕ: не более +10 баллов в год (реалистично)
+    max_growth = 10
+    score_1y = min(score_now + max_growth * 1, score_1y)
+    score_3y = min(score_now + max_growth * 3, score_3y)
+    score_5y = min(score_now + max_growth * 5, score_5y)
+    
+    # Округляем
+    score_1y = round(score_1y, 1)
+    score_3y = round(score_3y, 1)
+    score_5y = round(score_5y, 1)
+    
+    def level(s):
+        if s < 25: return 'Низкий'
+        if s < 50: return 'Средний'
+        if s < 75: return 'Высокий'
+        return 'Критический'
+    
+    icons = {'Низкий': '🟢', 'Средний': '🟡', 'Высокий': '🟠', 'Критический': '🔴'}
+    
+    lines = ["━" * 45, "🔴  СЦЕНАРИЙ: БЕЗ РЕМОНТА", "━" * 45]
+    lines.append(f"\n📈  Прогноз Risk Score (ML модель):")
+    lines.append(f"   Сейчас  : {score_now:.0f}  {icons[level(score_now)]} {level(score_now)}")
+    lines.append(f"   +1 год  : {score_1y:.0f}  {icons[level(score_1y)]} {level(score_1y)}")
+    lines.append(f"   +3 года : {score_3y:.0f}  {icons[level(score_3y)]} {level(score_3y)}")
+    lines.append(f"   +5 лет  : {score_5y:.0f}  {icons[level(score_5y)]} {level(score_5y)}")
+    
+    delta = score_5y - score_now
+    if delta > 30:
+        lines.append(f"\n⚠️  Рост риска на {delta:.0f} баллов за 5 лет — значительная деградация!")
+    elif delta > 15:
+        lines.append(f"\n⚠️  Рост риска на {delta:.0f} баллов — умеренная деградация")
     else:
-        lines.append(f"   • 0–1 год   : незначительное ухудшение состояния")
-        lines.append(f"   • 1–3 года  : ускорение износа без обслуживания")
-        lines.append(f"   • 3–5 лет   : вероятен переход в категорию 'Высокий риск'")
-        lines.append(f"   • 5+ лет    : потребуется капитальный ремонт")
-
-    lines.append(f"\n💰  Экономические потери:")
-    if risk_level == 'Критический':
-        lines.append(f"   • Аварийный ремонт в 3–5× дороже планового")
-        lines.append(f"   • Простой ирригации: до 50–200 млн тг убытков")
-        lines.append(f"   • Компенсации пострадавшим хозяйствам")
-    elif risk_level == 'Высокий':
-        lines.append(f"   • Стоимость ремонта вырастет в 2–3× через 2 года")
-        lines.append(f"   • Потери урожая при сбое в вегетационный период")
-    else:
-        lines.append(f"   • Стоимость ремонта вырастет в 1.5–2× через 3–5 лет")
-
+        lines.append(f"\n✅  Рост риска минимальный ({delta:.0f} баллов)")
+    
     lines.append("━" * 45)
     return "\n".join(lines)
 
 
 def scenario_after_repair(obj):
-    """Сценарий: что будет ПОСЛЕ ремонта"""
-    risk_score = obj.get('risk_score', 50)
+    """ML прогноз состояния объекта после ремонта."""
+    _load_ml()
+
+    score_now   = ml_predict(obj)
+    score_after = ml_predict(_repair(obj))
+
+    wear_pct   = (obj.get('wear_percent') or 0) * 100
     risk_level = obj.get('risk_level', 'Средний')
-    wear = (obj.get('wear_percent') or 0) * 100
-    obj_type = obj.get('type', 'объект')
     importance = obj.get('importance', 'низкая')
 
-    lines = ["━" * 45]
-    lines.append("🟢  СЦЕНАРИЙ: ПОСЛЕ РЕМОНТА")
-    lines.append("━" * 45)
+    def level(s):
+        if s < 25: return 'Низкий'
+        if s < 50: return 'Средний'
+        if s < 75: return 'Высокий'
+        return 'Критический'
 
-    # Новый ожидаемый риск
-    risk_new = max(8, risk_score * 0.30)
-    wear_new = max(5, wear * 0.15)
+    lvl_after = level(score_after)
 
-    lines.append(f"\n📉  Улучшение показателей:")
-    lines.append(f"   Risk Score : {risk_score:.0f}  →  {risk_new:.0f}  (снижение на {risk_score - risk_new:.0f} баллов)")
-    lines.append(f"   Износ      : {wear:.0f}%  →  {wear_new:.0f}%")
-    lines.append(f"   Уровень    : {risk_level}  →  Низкий ✅")
+    lines = ["━" * 45, "🟢  СЦЕНАРИЙ: ПОСЛЕ РЕМОНТА", "━" * 45]
+    lines.append(f"\n📉  Улучшение показателей (ML модель):")
+    lines.append(f"   Risk Score : {score_now:.0f}  →  {score_after:.0f}  (−{score_now - score_after:.0f})")
+    lines.append(f"   Износ      : {wear_pct:.0f}%  →  10%")
+    lines.append(f"   Состояние  : {obj.get('condition','?')}  →  удов.")
+    lines.append(f"   Уровень    : {risk_level}  →  {lvl_after} {'✅' if lvl_after == 'Низкий' else '🟡'}")
 
     lines.append(f"\n⏱️  Сроки ремонта (ориентировочно):")
     if risk_level == 'Критический':
         lines.append(f"   • Аварийные работы   : 2–4 недели")
         lines.append(f"   • Капитальный ремонт : 3–6 месяцев")
-        lines.append(f"   • Полная реконструкция (если нужно): 1–2 года")
     elif risk_level == 'Высокий':
         lines.append(f"   • Текущий ремонт  : 1–4 недели")
         lines.append(f"   • Средний ремонт  : 2–4 месяца")
     else:
         lines.append(f"   • Плановое ТО     : 3–7 дней")
-        lines.append(f"   • Текущий ремонт  : 2–4 недели")
 
     lines.append(f"\n✅  Выгоды после ремонта:")
     lines.append(f"   • Срок службы продлевается на 15–25 лет")
     lines.append(f"   • Снижение вероятности аварии в 3–5×")
     if importance in ('высокая', 'критическая'):
         lines.append(f"   • Гарантированное водоснабжение района")
-        lines.append(f"   • Соответствие нормативам Водного кодекса РК")
-    lines.append(f"   • Снятие объекта с мониторинга высокого риска")
 
     lines.append(f"\n💰  Экономический эффект:")
     if risk_level in ('Высокий', 'Критический'):
-        lines.append(f"   • Предотвращение аварийных потерь: 50–200 млн тг")
+        lines.append(f"   • Предотвращение потерь: 50–200 млн тг")
         lines.append(f"   • Плановый ремонт в 3–5× дешевле аварийного")
-        lines.append(f"   • ROI ремонта: окупается за 1–2 сезона")
+        lines.append(f"   • ROI: окупается за 1–2 сезона")
     else:
         lines.append(f"   • Предотвращение роста затрат в будущем")
-        lines.append(f"   • Стабильность ирригационной системы")
 
     lines.append("━" * 45)
     return "\n".join(lines)
 
 # ============================================
-# 4. Полный анализ объекта (главная функция)
+# Полный анализ объекта
 # ============================================
 
 def analyze_object(obj, show_details=True):
-    obj_id = obj.get('id')
-    name = obj.get('name', f"Объект №{obj_id}")
-    obj_type = obj.get('type', 'неизвестно')
+    obj_id     = obj.get('id')
+    name       = obj.get('name', f"Объект №{obj_id}")
+    obj_type   = obj.get('type', 'неизвестно')
     year_built = obj.get('year_built')
-    wear = obj.get('wear_percent', 0)
-    condition = obj.get('condition', 'неизвестно')
-    risk_score = obj.get('risk_score', 0)
-    risk_level = obj.get('risk_level', 'Неизвестно')
-    last_inspection = obj.get('last_inspection')
+    wear       = obj.get('wear_percent', 0)
+    condition  = obj.get('condition', 'неизвестно')
     importance = obj.get('importance', 'неизвестно')
-    district = obj.get('district', 'неизвестно')
+    district   = obj.get('district', 'неизвестно')
+
+    # ML пересчитывает Risk Score каждый раз — актуально
+    risk_score = ml_predict(obj)
+    if   risk_score < 25: risk_level = 'Низкий'
+    elif risk_score < 50: risk_level = 'Средний'
+    elif risk_score < 75: risk_level = 'Высокий'
+    else:                 risk_level = 'Критический'
 
     age_text = f"{CURRENT_YEAR - year_built} лет" if year_built else "неизвестно"
 
+    last_inspection = obj.get('last_inspection')
     if last_inspection:
         try:
-            last_date = datetime.fromisoformat(last_inspection)
+            last_date  = datetime.fromisoformat(last_inspection)
             days_since = (CURRENT_DATE - last_date).days
             inspection_text = (
                 f"{days_since} дней назад" if days_since < 365
@@ -229,8 +375,6 @@ def analyze_object(obj, show_details=True):
         'Средний':     '📋  СРЕДНИЙ ПРИОРИТЕТ',
         'Низкий':      '✅  НИЗКИЙ ПРИОРИТЕТ',
     }
-    priority = PRIORITY_MAP.get(risk_level, '❓ НЕИЗВЕСТНО')
-
     RECOMMENDATIONS_MAP = {
         'Критический': [
             "1️⃣  НЕМЕДЛЕННО провести внеочередное обследование (в течение 7 дней)",
@@ -255,28 +399,21 @@ def analyze_object(obj, show_details=True):
             "3️⃣  Регулярное обновление документации",
         ],
     }
-    recommendations = RECOMMENDATIONS_MAP.get(risk_level, ["❓  Нет данных для рекомендаций"])
-    if condition == 'не удов.' and risk_level in ('Высокий', 'Критический'):
-        recommendations.append("➕  Объект требует срочного капитального ремонта")
 
-    # Причины риска
+    priority        = PRIORITY_MAP.get(risk_level, '❓ НЕИЗВЕСТНО')
+    recommendations = RECOMMENDATIONS_MAP.get(risk_level, [])
+    if condition == 'не удов.' and risk_level in ('Высокий', 'Критический'):
+        recommendations.append("➕  Требуется срочный капитальный ремонт")
+
     risk_reasons = get_risk_reasons(obj)
 
     result = {
-        'object_id': obj_id,
-        'name': name,
-        'type': obj_type,
-        'age': age_text,
-        'wear_percent': wear,
-        'condition': condition,
-        'risk_score': risk_score,
-        'risk_level': risk_level,
-        'last_inspection': inspection_text,
-        'importance': importance,
-        'district': district,
-        'priority': priority,
-        'recommendations': recommendations,
-        'risk_reasons': risk_reasons,
+        'object_id': obj_id, 'name': name, 'type': obj_type,
+        'age': age_text, 'wear_percent': wear, 'condition': condition,
+        'risk_score': risk_score, 'risk_level': risk_level,
+        'last_inspection': inspection_text, 'importance': importance,
+        'district': district, 'priority': priority,
+        'recommendations': recommendations, 'risk_reasons': risk_reasons,
     }
 
     if show_details:
@@ -290,14 +427,12 @@ def analyze_object(obj, show_details=True):
         print(f"  Износ      : {wear * 100:.1f}%")
         print(f"  Состояние  : {condition}")
         print(f"  Осмотр     : {inspection_text}")
-        print(f"\n  Risk Score : {risk_score}  [{risk_level}]")
+        print(f"\n  Risk Score : {risk_score}  [{risk_level}]  ← ML")
         print(f"\n  {priority}")
-
         print(f"\n{'─'*45}")
-        print(f"⚡  ПРИЧИНЫ РИСКА:")
-        for reason in risk_reasons:
-            print(f"   {reason}")
-
+        print(f"⚡  ПРИЧИНЫ РИСКА (по вкладу в ML):")
+        for r in risk_reasons:
+            print(f"   {r}")
         print(f"\n{'─'*45}")
         print(f"📌  РЕКОМЕНДАЦИИ:")
         for rec in recommendations:
@@ -306,36 +441,17 @@ def analyze_object(obj, show_details=True):
 
     return result
 
-
 # ============================================
-# 5. Сценарное моделирование — интерактив
+# Вспомогательные функции
 # ============================================
 
-def run_scenario(obj):
-    print(f"\n📊  Сценарное моделирование для: {obj.get('name', 'объект')}")
-    print("  1 — Что будет если НЕ ремонтировать?")
-    print("  2 — Что будет ПОСЛЕ ремонта?")
-    print("  0 — Назад")
-    choice = input("\nВыбери сценарий: ").strip()
-    if choice == '1':
-        print(scenario_no_repair(obj))
-    elif choice == '2':
-        print(scenario_after_repair(obj))
-    elif choice == '0':
-        return
-    else:
-        print("❌  Неверный выбор")
-
-
-# ============================================
-# 6. Вспомогательные фильтры
-# ============================================
+def load_objects():
+    filepath = os.path.join(os.path.dirname(__file__), 'hydraulic_objects.json')
+    with open(filepath, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
 def find_object_by_id(objects, obj_id):
-    for obj in objects:
-        if obj['id'] == obj_id:
-            return obj
-    return None
+    return next((o for o in objects if o['id'] == obj_id), None)
 
 def filter_by_district(objects, district):
     return [o for o in objects if o.get('district', '').lower() == district.lower()]
@@ -354,57 +470,33 @@ def analyze_high_risk(objects):
     print(f"Найдено: {len(high_risk)} объектов\n")
     for obj in high_risk:
         analyze_object(obj, show_details=True)
-    print(f"\n✅  Проанализировано {len(high_risk)} объектов")
-
-
-# ============================================
-# 7. Статистика
-# ============================================
 
 def show_statistics(objects):
     print("\n" + "="*50)
     print("📊  СТАТИСТИКА")
     print("="*50)
     print(f"Всего объектов: {len(objects)}")
-
-    print("\nПо состоянию:")
-    conds = {}
-    for o in objects:
-        c = o.get('condition', 'неизвестно')
-        conds[c] = conds.get(c, 0) + 1
-    for c, n in conds.items():
-        print(f"  {c}: {n}")
-
-    print("\nПо уровню риска:")
-    icons = {'Низкий': '🟢', 'Средний': '🟡', 'Высокий': '🟠', 'Критический': '🔴'}
-    levels = {}
-    for o in objects:
-        lv = o.get('risk_level', 'неизвестно')
-        levels[lv] = levels.get(lv, 0) + 1
-    for lv, n in levels.items():
-        print(f"  {icons.get(lv,'⚪')} {lv}: {n}")
-
-    print("\nПо важности:")
-    imps = {}
-    for o in objects:
-        i = o.get('importance', 'неизвестно')
-        imps[i] = imps.get(i, 0) + 1
-    for i, n in imps.items():
-        print(f"  {i}: {n}")
-
-    print("\nТоп-5 районов:")
-    dists = {}
-    for o in objects:
-        d = o.get('district', 'неизвестно')
-        dists[d] = dists.get(d, 0) + 1
-    for d, n in sorted(dists.items(), key=lambda x: -x[1])[:5]:
-        print(f"  {d}: {n}")
+    for label, getter in [("состоянию", 'condition'), ("уровню риска", 'risk_level'), ("важности", 'importance')]:
+        print(f"\nПо {label}:")
+        counts = {}
+        for o in objects:
+            k = o.get(getter, 'неизвестно')
+            counts[k] = counts.get(k, 0) + 1
+        icons = {'Низкий':'🟢','Средний':'🟡','Высокий':'🟠','Критический':'🔴'}
+        for k, n in counts.items():
+            print(f"  {icons.get(k,'')} {k}: {n}")
     print("="*50)
 
-
-# ============================================
-# 8. Главное меню
-# ============================================
+def run_scenario(obj):
+    print(f"\n📊  Сценарное моделирование: {obj.get('name','объект')}")
+    print("  1 — Что будет если НЕ ремонтировать?")
+    print("  2 — Что будет ПОСЛЕ ремонта?")
+    print("  0 — Назад")
+    choice = input("\nВыбери сценарий: ").strip()
+    if choice == '1':
+        print(scenario_no_repair(obj))
+    elif choice == '2':
+        print(scenario_after_repair(obj))
 
 def show_menu():
     print("\n" + "="*50)
@@ -418,9 +510,9 @@ def show_menu():
     print("0️⃣   Выход")
     print("="*50)
 
-
 def main():
-    print("Загрузка данных...")
+    print("Загрузка данных и ML модели...")
+    _load_ml()
     objects = load_objects()
     print(f"Загружено {len(objects)} объектов\n")
 
@@ -434,8 +526,7 @@ def main():
                 obj = find_object_by_id(objects, obj_id)
                 if obj:
                     analyze_object(obj)
-                    # Сценарное моделирование
-                    print("\n💡  Хочешь запустить сценарное моделирование?  (y/n)")
+                    print("\n💡  Запустить сценарное моделирование? (y/n)")
                     if input().strip().lower() == 'y':
                         run_scenario(obj)
                 else:
@@ -447,19 +538,17 @@ def main():
             district = input("Введите название района: ")
             filtered = filter_by_district(objects, district)
             if filtered:
-                print(f"\nНайдено {len(filtered)} объектов в районе {district}")
                 for obj in filtered:
-                    analyze_object(obj, show_details=True)
+                    analyze_object(obj)
             else:
-                print(f"❌  В районе {district} объектов не найдено")
+                print(f"❌  В районе '{district}' объектов не найдено")
 
         elif choice == '3':
-            condition = input("Введите состояние (удов. / не удов.): ")
+            condition = input("Состояние (удов. / не удов.): ")
             filtered = filter_by_condition(objects, condition)
             if filtered:
-                print(f"\nНайдено {len(filtered)} объектов с состоянием '{condition}'")
                 for obj in filtered:
-                    analyze_object(obj, show_details=True)
+                    analyze_object(obj)
             else:
                 print(f"❌  Объектов с состоянием '{condition}' не найдено")
 
@@ -472,10 +561,8 @@ def main():
         elif choice == '0':
             print("👋  Выход...")
             break
-
         else:
             print("❌  Неверный выбор!")
-
 
 if __name__ == "__main__":
     main()
