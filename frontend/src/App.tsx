@@ -9,12 +9,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/catalog" element={<Catalog />} />
-        <Route path="/map" element={<MapPage />} />
-        <Route path="/object/:id" element={<ObjectDetails />} />
-      </Routes>
+      <div style={{ paddingTop: "60px" }}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/catalog" element={<Catalog />} />
+          <Route path="/map" element={<MapPage />} />
+          <Route path="/object/:id" element={<ObjectDetails />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }
