@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..database import get_db
 from ..enums import CONDITIONS, ConditionCode, RISK_LABELS
+from ..services import priority
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
@@ -161,3 +162,42 @@ def dashboard(db: Session = Depends(get_db)):
         "risk_labels": {k.value: v for k, v in RISK_LABELS.items()},
     })
     return data
+
+
+def accident_counts(db: Session) -> dict[int, int]:
+    """Accidents per structure = emergency inspections + emergency repairs."""
+    acc: dict[int, int] = {}
+    for sid, n in db.execute(
+        select(models.Inspection.structure_id, func.count())
+        .where(models.Inspection.inspection_type == "Аварийный")
+        .group_by(models.Inspection.structure_id)
+    ).all():
+        acc[sid] = acc.get(sid, 0) + int(n)
+    for sid, n in db.execute(
+        select(models.Repair.structure_id, func.count())
+        .where(models.Repair.repair_type == "Аварийный ремонт")
+        .group_by(models.Repair.structure_id)
+    ).all():
+        acc[sid] = acc.get(sid, 0) + int(n)
+    return acc
+
+
+@router.get("/priority-ranking", response_model=list[schemas.PriorityItem])
+def priority_ranking(limit: int = 50, db: Session = Depends(get_db)):
+    """Objects ranked by Inspection Priority Score (deterministic expert model),
+    highest first. Used by the dashboard, analytics and object card."""
+    acc = accident_counts(db)
+    items = []
+    for s in db.scalars(select(S)):
+        p = priority.compute_priority(
+            condition=s.condition, year_built=s.year_built,
+            last_inspection=s.last_inspection, significance=s.significance,
+            accident_count=acc.get(s.id, 0),
+        )
+        items.append(schemas.PriorityItem(
+            id=s.id, name=s.name, type=s.type, district=s.district,
+            priority_score=p["priority_score"], priority_level=p["priority_level"],
+            next_inspection_recommendation=p["next_inspection_recommendation"],
+        ))
+    items.sort(key=lambda x: x.priority_score, reverse=True)
+    return items[:limit]

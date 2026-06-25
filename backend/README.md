@@ -71,6 +71,8 @@ docker compose up --build
 | GET | `/api/analytics/charts` | Данные для графиков (по типам/районам/декадам/риску) |
 | GET | `/api/analytics/dynamics?months=12` | Динамика состояния по месяцам (линейный график) |
 | GET | `/api/analytics/top-risk?limit=10` | Топ проблемных объектов (диспетчер) |
+| GET | `/api/analytics/priority-ranking?limit=50` | **Рейтинг по приоритету осмотра** (экспертная модель) |
+| GET | `/api/structures/{id}/priority` | Priority Score объекта + breakdown (для карточки) |
 
 ### Отчёты / Экспорт (ТЗ: отчётность)
 | Метод | Путь | Формат |

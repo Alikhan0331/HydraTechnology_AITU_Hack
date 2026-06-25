@@ -165,6 +165,27 @@ class HistoryResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+#  Priority ranking
+# --------------------------------------------------------------------------- #
+class PriorityItem(BaseModel):
+    id: int
+    name: str
+    type: str
+    district: str
+    priority_score: int
+    priority_level: str
+    next_inspection_recommendation: str
+
+
+class PriorityDetail(BaseModel):
+    priority_score: int
+    priority_level: str
+    next_inspection_recommendation: str
+    recommended_interval_days: int
+    breakdown: dict[str, int]
+
+
+# --------------------------------------------------------------------------- #
 #  Risk
 # --------------------------------------------------------------------------- #
 class RiskAssessmentRead(BaseModel):

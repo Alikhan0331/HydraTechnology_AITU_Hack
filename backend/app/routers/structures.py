@@ -1,11 +1,11 @@
 """/api/structures — catalog CRUD, filtering, map data, risk, inspections."""
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .. import crud, models, schemas
 from ..database import get_db
-from ..services import risk_engine
+from ..services import priority, risk_engine
 
 router = APIRouter(prefix="/api/structures", tags=["structures"])
 
@@ -116,6 +116,33 @@ def recompute_risk(structure_id: int, db: Session = Depends(get_db)):
         factors=risk["factors"], recommendation=risk["recommendation"],
         next_inspection=obj.next_inspection,
     )
+
+
+# --- Inspection Priority (deterministic expert model) -------------------------
+@router.get("/{structure_id}/priority", response_model=schemas.PriorityDetail)
+def get_priority(structure_id: int, db: Session = Depends(get_db)):
+    obj = crud.get_structure(db, structure_id)
+    if not obj:
+        raise HTTPException(404, "Structure not found")
+    accidents = (db.scalar(
+        select(func.count()).select_from(models.Inspection).where(
+            models.Inspection.structure_id == structure_id,
+            models.Inspection.inspection_type == "Аварийный")
+    ) or 0) + (db.scalar(
+        select(func.count()).select_from(models.Repair).where(
+            models.Repair.structure_id == structure_id,
+            models.Repair.repair_type == "Аварийный ремонт")
+    ) or 0)
+    p = priority.compute_priority(
+        condition=obj.condition, year_built=obj.year_built,
+        last_inspection=obj.last_inspection, significance=obj.significance,
+        accident_count=accidents,
+    )
+    return schemas.PriorityDetail(**{
+        k: p[k] for k in ("priority_score", "priority_level",
+                          "next_inspection_recommendation",
+                          "recommended_interval_days", "breakdown")
+    })
 
 
 # --- Operation history: inspections + repairs ---------------------------------
