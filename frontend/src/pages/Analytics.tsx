@@ -7,6 +7,7 @@ import {
 import { getAnalyticsCharts, getAnalyticsDynamics, getTopRisk } from "../api/structures";
 import type { Structure } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
+import PriorityRanking from "../components/PriorityRanking";
 
 const RISK_COLORS: Record<string, string> = {
   low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626",
@@ -182,6 +183,9 @@ export default function Analytics() {
           </div>
         </>
       )}
+      <div style={{ marginTop: "20px" }}>
+        <PriorityRanking limit={10} />
+      </div>
     </div>
   );
 }
