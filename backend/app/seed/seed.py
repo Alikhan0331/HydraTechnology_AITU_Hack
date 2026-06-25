@@ -6,9 +6,9 @@ Usage:
 """
 import random
 import sys
-from datetime import timedelta
+from datetime import date, timedelta
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select
 
 from ..database import Base, SessionLocal, engine
 from ..enums import CONDITIONS, STRUCTURE_TYPES
@@ -16,6 +16,7 @@ from ..models import (
     ConditionCategory,
     HydraulicStructure,
     Inspection,
+    Repair,
     RiskAssessment,
     StructureType,
 )
@@ -41,6 +42,30 @@ _NOTES = {
     ],
 }
 
+# Inspection type pool per condition (worse condition → more unscheduled/emergency)
+_INSP_TYPES = {
+    "good": ["Плановый", "Плановый", "Плановый"],
+    "monitoring": ["Плановый", "Плановый", "Внеочередной"],
+    "requires_repair": ["Плановый", "Внеочередной", "Внеочередной"],
+    "emergency": ["Плановый", "Внеочередной", "Аварийный"],
+}
+# How many repairs + which types per condition
+_REPAIR_COUNT = {"good": (0, 1), "monitoring": (0, 1), "requires_repair": (1, 2), "emergency": (2, 3)}
+_REPAIR_TYPES = {
+    "good": ["Текущий ремонт"],
+    "monitoring": ["Текущий ремонт"],
+    "requires_repair": ["Текущий ремонт", "Капитальный ремонт"],
+    "emergency": ["Капитальный ремонт", "Аварийный ремонт"],
+}
+_REPAIR_NOTES = {
+    "Текущий ремонт": ["Очистка русла и текущий ремонт облицовки.",
+                       "Текущий ремонт затворов и креплений откосов."],
+    "Капитальный ремонт": ["Капитальный ремонт тела сооружения.",
+                           "Реконструкция водопропускных элементов."],
+    "Аварийный ремонт": ["Аварийный ремонт после весеннего паводка.",
+                         "Срочное устранение аварийных дефектов конструкции."],
+}
+
 
 def _seed_catalogs(db):
     if not db.scalar(select(func.count()).select_from(StructureType)):
@@ -50,14 +75,6 @@ def _seed_catalogs(db):
         for cond, (ru, color, sev) in CONDITIONS.items():
             db.add(ConditionCategory(code=cond.value, name_ru=ru, color=color, severity=sev))
     db.commit()
-
-
-def _reset(db):
-    db.execute(delete(Inspection))
-    db.execute(delete(RiskAssessment))
-    db.execute(delete(HydraulicStructure))
-    db.commit()
-    print("• wiped structures / inspections / risk_assessments")
 
 
 def _seed_structures(db):
@@ -75,21 +92,36 @@ def _seed_structures(db):
             factors={"seeded": True},
         ))
 
-        # 1–2 historical inspections ending at last_inspection
+        # --- inspection history (2–4 records, varied per object) ---
         rng = random.Random(f"insp:{obj.id}")
         last = obj.last_inspection
-        for k in range(rng.randint(1, 2)):
-            d = last - timedelta(days=rng.randint(180, 900) * (k + 1))
+        insp_types = _INSP_TYPES.get(obj.condition, ["Плановый"])
+        d = last
+        for k in range(rng.randint(2, 4)):
+            # most recent reflects current condition; first one is "Плановый"
+            itype = insp_types[0] if k == 0 else rng.choice(insp_types)
             db.add(Inspection(
-                structure_id=obj.id, date=d,
-                inspector=rng.choice([
-                    "Отдел эксплуатации", "Жамбылводхоз", "Райводхоз",
-                    "Комиссия обследования",
-                ]),
-                condition_found=obj.condition,
+                structure_id=obj.id, date=d, inspection_type=itype,
+                inspector=rng.choice(["Отдел эксплуатации", "Жамбылводхоз",
+                                      "Райводхоз", "Комиссия обследования"]),
+                condition_found=obj.condition if k == 0 else "good",
                 wear_found=obj.wear_percent,
                 notes=rng.choice(_NOTES.get(obj.condition, ["Плановое обследование."])),
             ))
+            d = d - timedelta(days=rng.randint(180, 540))
+
+        # --- repair history (count + types depend on condition) ---
+        rrng = random.Random(f"repair:{obj.id}")
+        lo, hi = _REPAIR_COUNT.get(obj.condition, (0, 1))
+        rtypes = _REPAIR_TYPES.get(obj.condition, ["Текущий ремонт"])
+        rd = date.today() - timedelta(days=rrng.randint(200, 800))
+        for _ in range(rrng.randint(lo, hi)):
+            rtype = rrng.choice(rtypes)
+            db.add(Repair(
+                structure_id=obj.id, repair_date=rd, repair_type=rtype,
+                notes=rrng.choice(_REPAIR_NOTES[rtype]),
+            ))
+            rd = rd - timedelta(days=rrng.randint(400, 1500))
     db.commit()
     return len(rows)
 
@@ -110,12 +142,14 @@ def ensure_seeded():
 
 def main():
     reset = "--reset" in sys.argv
+    if reset:
+        # recreate the schema so model changes (new columns/tables) take effect
+        Base.metadata.drop_all(bind=engine)
+        print("• dropped all tables (schema rebuild)")
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         _seed_catalogs(db)
-        if reset:
-            _reset(db)
         existing = db.scalar(select(func.count()).select_from(HydraulicStructure))
         if existing:
             print(f"• structures already present ({existing}); use --reset to rebuild.")

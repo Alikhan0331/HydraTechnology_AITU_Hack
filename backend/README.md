@@ -52,8 +52,9 @@ docker compose up --build
 | DELETE | `/api/structures/{id}` | Удалить |
 | GET | `/api/structures/{id}/risk` | Риск + факторы + рекомендация |
 | POST | `/api/structures/{id}/risk` | Пересчитать и залогировать риск |
-| GET | `/api/structures/{id}/inspections` | История обследований |
-| POST | `/api/structures/{id}/inspections` | Добавить обследование |
+| GET | `/api/structures/{id}/history` | **История эксплуатации**: `{inspections, repairs}` |
+| GET/POST/DELETE | `/api/structures/{id}/inspections` | CRUD осмотров (тип: Плановый/Внеочередной/Аварийный) |
+| GET/POST/DELETE | `/api/structures/{id}/repairs` | CRUD ремонтов (тип: Текущий/Капитальный/Аварийный) |
 
 **Фильтры `GET /api/structures`** (query-параметры, все опциональны):
 `type` (RU-название или код), `condition`, `district`, `risk_level`,

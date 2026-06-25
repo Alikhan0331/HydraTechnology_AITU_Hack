@@ -118,32 +118,63 @@ def recompute_risk(structure_id: int, db: Session = Depends(get_db)):
     )
 
 
-# --- Inspections --------------------------------------------------------------
-@router.get("/{structure_id}/inspections", response_model=list[schemas.InspectionRead])
-def list_inspections(structure_id: int, db: Session = Depends(get_db)):
+# --- Operation history: inspections + repairs ---------------------------------
+def _insp_read(i: models.Inspection) -> schemas.InspectionRead:
+    return schemas.InspectionRead(
+        id=i.id, structure_id=i.structure_id, inspection_date=i.date,
+        inspection_type=i.inspection_type, notes=i.notes,
+        inspector=i.inspector, condition_found=i.condition_found,
+    )
+
+
+def _require(db, structure_id):
     obj = crud.get_structure(db, structure_id)
     if not obj:
         raise HTTPException(404, "Structure not found")
-    stmt = (
-        select(models.Inspection)
-        .where(models.Inspection.structure_id == structure_id)
+    return obj
+
+
+@router.get("/{structure_id}/history", response_model=schemas.HistoryResponse)
+def get_history(structure_id: int, db: Session = Depends(get_db)):
+    """Inspection + repair history for the object card (newest first)."""
+    _require(db, structure_id)
+    insp = db.scalars(
+        select(models.Inspection).where(models.Inspection.structure_id == structure_id)
         .order_by(models.Inspection.date.desc())
     )
-    return list(db.scalars(stmt))
+    reps = db.scalars(
+        select(models.Repair).where(models.Repair.structure_id == structure_id)
+        .order_by(models.Repair.repair_date.desc())
+    )
+    return schemas.HistoryResponse(
+        inspections=[_insp_read(i) for i in insp],
+        repairs=list(reps),
+    )
+
+
+# --- Inspections CRUD ---------------------------------------------------------
+@router.get("/{structure_id}/inspections", response_model=list[schemas.InspectionRead])
+def list_inspections(structure_id: int, db: Session = Depends(get_db)):
+    _require(db, structure_id)
+    stmt = (select(models.Inspection).where(models.Inspection.structure_id == structure_id)
+            .order_by(models.Inspection.date.desc()))
+    return [_insp_read(i) for i in db.scalars(stmt)]
 
 
 @router.post("/{structure_id}/inspections", response_model=schemas.InspectionRead,
              status_code=201)
 def add_inspection(structure_id: int, data: schemas.InspectionCreate,
                    db: Session = Depends(get_db)):
-    obj = crud.get_structure(db, structure_id)
-    if not obj:
-        raise HTTPException(404, "Structure not found")
-    insp = models.Inspection(structure_id=structure_id, **data.model_dump())
+    obj = _require(db, structure_id)
+    insp = models.Inspection(
+        structure_id=structure_id, date=data.inspection_date,
+        inspection_type=data.inspection_type, notes=data.notes,
+        inspector=data.inspector, condition_found=data.condition_found,
+        wear_found=data.wear_found,
+    )
     db.add(insp)
-    # newest inspection updates the structure's last_inspection + risk
-    if not obj.last_inspection or data.date >= obj.last_inspection:
-        obj.last_inspection = data.date
+    if not obj.last_inspection or data.inspection_date >= obj.last_inspection:
+        obj.last_inspection = data.inspection_date
         if data.condition_found:
             obj.condition = data.condition_found
         if data.wear_found is not None:
@@ -151,4 +182,41 @@ def add_inspection(structure_id: int, data: schemas.InspectionCreate,
     db.commit()
     db.refresh(insp)
     crud.recompute_risk(db, obj)
-    return insp
+    return _insp_read(insp)
+
+
+@router.delete("/{structure_id}/inspections/{inspection_id}", status_code=204)
+def delete_inspection(structure_id: int, inspection_id: int, db: Session = Depends(get_db)):
+    obj = db.get(models.Inspection, inspection_id)
+    if not obj or obj.structure_id != structure_id:
+        raise HTTPException(404, "Inspection not found")
+    db.delete(obj)
+    db.commit()
+
+
+# --- Repairs CRUD -------------------------------------------------------------
+@router.get("/{structure_id}/repairs", response_model=list[schemas.RepairRead])
+def list_repairs(structure_id: int, db: Session = Depends(get_db)):
+    _require(db, structure_id)
+    stmt = (select(models.Repair).where(models.Repair.structure_id == structure_id)
+            .order_by(models.Repair.repair_date.desc()))
+    return list(db.scalars(stmt))
+
+
+@router.post("/{structure_id}/repairs", response_model=schemas.RepairRead, status_code=201)
+def add_repair(structure_id: int, data: schemas.RepairCreate, db: Session = Depends(get_db)):
+    _require(db, structure_id)
+    rep = models.Repair(structure_id=structure_id, **data.model_dump())
+    db.add(rep)
+    db.commit()
+    db.refresh(rep)
+    return rep
+
+
+@router.delete("/{structure_id}/repairs/{repair_id}", status_code=204)
+def delete_repair(structure_id: int, repair_id: int, db: Session = Depends(get_db)):
+    obj = db.get(models.Repair, repair_id)
+    if not obj or obj.structure_id != structure_id:
+        raise HTTPException(404, "Repair not found")
+    db.delete(obj)
+    db.commit()

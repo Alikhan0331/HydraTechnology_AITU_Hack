@@ -93,6 +93,9 @@ class HydraulicStructure(Base):
     inspections: Mapped[list["Inspection"]] = relationship(
         back_populates="structure", cascade="all, delete-orphan"
     )
+    repairs: Mapped[list["Repair"]] = relationship(
+        back_populates="structure", cascade="all, delete-orphan"
+    )
     risk_assessments: Mapped[list["RiskAssessment"]] = relationship(
         back_populates="structure", cascade="all, delete-orphan"
     )
@@ -107,11 +110,26 @@ class Inspection(Base):
     )
     date: Mapped[date] = mapped_column(Date)
     inspector: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    inspection_type: Mapped[str] = mapped_column(String(40), default="Плановый")
     condition_found: Mapped[str | None] = mapped_column(String(40), nullable=True)
     wear_found: Mapped[float | None] = mapped_column(Float, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     structure: Mapped["HydraulicStructure"] = relationship(back_populates="inspections")
+
+
+class Repair(Base):
+    __tablename__ = "repairs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    structure_id: Mapped[int] = mapped_column(
+        ForeignKey("hydraulic_structures.id", ondelete="CASCADE"), index=True
+    )
+    repair_date: Mapped[date] = mapped_column(Date)
+    repair_type: Mapped[str] = mapped_column(String(40), default="Текущий ремонт")
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    structure: Mapped["HydraulicStructure"] = relationship(back_populates="repairs")
 
 
 class RiskAssessment(Base):
