@@ -4,6 +4,7 @@ const links = [
   { to: "/", label: "Дашборд", icon: "📊", desc: "Обзор системы" },
   { to: "/catalog", label: "Каталог", icon: "📋", desc: "Все объекты" },
   { to: "/map", label: "Карта", icon: "🗺️", desc: "Геовизуализация" },
+  { to: "/analytics", label: "Аналитика", icon: "📈", desc: "Графики и тренды" },
   { to: "/detection", label: "Обнаружение", icon: "🔍", desc: "Поиск по координатам" },
 ];
 
@@ -38,7 +39,7 @@ export default function Sidebar() {
         <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--gray-400)", letterSpacing: "1.2px", textTransform: "uppercase" }}>Навигация</span>
       </div>
 
-      <nav style={{ padding: "0 12px", flex: 1 }}>
+      <nav style={{ padding: "0 12px", flex: 1, overflowY: "auto" }}>
         {links.map((link) => {
           const active = location.pathname === link.to;
           return (
