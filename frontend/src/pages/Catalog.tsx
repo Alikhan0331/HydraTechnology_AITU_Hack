@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getStructures, Structure } from "../api/structures";
+import { getStructures } from "../api/structures";
+import type { Structure } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
 
 const MOCK: Structure[] = [
@@ -35,7 +36,6 @@ export default function Catalog() {
   return (
     <div style={{ padding: "32px", background: "#f1f5f9", minHeight: "100vh" }}>
       <h1 style={{ marginBottom: "24px", color: "#1e293b" }}>📋 Каталог объектов</h1>
-
       <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
         <input
           placeholder="Поиск по названию или району..."
@@ -54,7 +54,6 @@ export default function Catalog() {
           ))}
         </select>
       </div>
-
       <div style={{ background: "white", borderRadius: "12px", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead style={{ background: "#1e40af", color: "white" }}>

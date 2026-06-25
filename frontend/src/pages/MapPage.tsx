@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
-import { getMapData, Structure } from "../api/structures";
+import { getMapData } from "../api/structures";
+import type { Structure } from "../api/structures";
 import { conditionColor, conditionLabel } from "../utils/conditionColors";
 import "leaflet/dist/leaflet.css";
 
@@ -30,11 +31,7 @@ export default function MapPage() {
           </div>
         ))}
       </div>
-      <MapContainer
-        center={[42.85, 71.37]}
-        zoom={9}
-        style={{ flex: 1 }}
-      >
+      <MapContainer center={[42.85, 71.37]} zoom={9} style={{ flex: 1 }}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; OpenStreetMap contributors'
