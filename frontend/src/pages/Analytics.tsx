@@ -13,9 +13,6 @@ const RISK_COLORS: Record<string, string> = {
   low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626",
   "Низкий": "#16a34a", "Средний": "#eab308", "Высокий": "#ea580c", "Критический": "#dc2626",
 };
-const RISK_LABELS: Record<string, string> = {
-  low: "Низкий", medium: "Средний", high: "Высокий", critical: "Критический",
-};
 const DISTRICT_COLORS = ["#1d4ed8","#0ea5e9","#6366f1","#8b5cf6","#ec4899","#f59e0b","#10b981","#64748b","#ef4444","#14b8a6"];
 
 interface ChartsData {

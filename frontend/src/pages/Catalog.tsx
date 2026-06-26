@@ -124,7 +124,7 @@ export default function Catalog() {
   const SortArrow = ({ col }: { col: typeof sortBy }) =>
     sortBy === col ? <span style={{ marginLeft: 4, fontSize: 10 }}>{sortDir === "asc" ? "▲" : "▼"}</span> : null;
 
-  const thStyle = (col: typeof sortBy): React.CSSProperties => ({
+  const thStyle = (_col: typeof sortBy): React.CSSProperties => ({
     padding: "12px 16px", textAlign: "left", color: "var(--gray-500)", fontSize: "11px",
     fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase",
     cursor: "pointer", whiteSpace: "nowrap", userSelect: "none",

@@ -391,7 +391,7 @@ export default function ObjectDetails() {
 
   const handleViewOnMap = () => navigate(`/detection?lat=${obj.latitude}&lng=${obj.longitude}&id=${id}&name=${encodeURIComponent(obj.name)}`);
 
-  const recColor = statusColors[risk?.recommendation] || ({ low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626" }[obj.risk_level] || "#2563eb");
+  const recColor = statusColors[risk?.recommendation] || (({ low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626" } as Record<string, string>)[obj.risk_level] || "#2563eb");
   const ageYears = obj.year_built ? (2026 - obj.year_built) : null;
   const efficiencyLoss = (obj.efficiency_design && obj.efficiency_actual)
     ? Math.max(0, Math.round((obj.efficiency_design - obj.efficiency_actual) * 100)) : null;
@@ -572,13 +572,16 @@ export default function ObjectDetails() {
             <InfoRow label="Обновлено" value={obj.updated_at ? new Date(obj.updated_at).toLocaleDateString() : "—"} />
           </div>
           <div style={{ background: "white", borderRadius: "var(--radius-lg)", padding: "20px", border: "1px solid var(--gray-200)", boxShadow: "var(--shadow-sm)" }}>
-            <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 4px", fontWeight: 700 }}>📥 Экспорт отчёта</h3>
-            <p style={{ fontSize: "12px", color: "var(--gray-400)", margin: "0 0 12px" }}>Полный реестр с применением фильтров</p>
+            <h3 style={{ fontSize: "14px", color: "var(--gray-900)", margin: "0 0 4px", fontWeight: 700 }}>📥 Экспорт</h3>
+            <p style={{ fontSize: "12px", color: "var(--gray-400)", margin: "0 0 12px" }}>Паспорт этого объекта или весь реестр</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <a href={`${BASE_URL}/api/reports/structure/${id}.pdf`} target="_blank" rel="noopener noreferrer"
+                style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "var(--radius-sm)", border: "1px solid #dc262630", background: "#dc262610", color: "#dc2626", fontWeight: 700, fontSize: "13px", textDecoration: "none" }}>
+                <span>📃</span> Паспорт объекта (PDF)
+              </a>
               {[
-                { fmt: "csv",  label: "Скачать CSV",   icon: "📄", color: "#16a34a" },
-                { fmt: "xlsx", label: "Скачать Excel", icon: "📊", color: "#1d4ed8" },
-                { fmt: "pdf",  label: "Скачать PDF",   icon: "📃", color: "#dc2626" },
+                { fmt: "xlsx", label: "Весь реестр — Excel", icon: "📊", color: "#1d4ed8" },
+                { fmt: "csv",  label: "Весь реестр — CSV",   icon: "📄", color: "#16a34a" },
               ].map(({ fmt, label, icon, color }) => (
                 <a key={fmt} href={exportUrl(fmt)} target="_blank" rel="noopener noreferrer"
                   style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "var(--radius-sm)", border: `1px solid ${color}30`, background: color + "08", color, fontWeight: 600, fontSize: "13px", textDecoration: "none" }}>
