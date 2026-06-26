@@ -7,14 +7,59 @@ Docs:       http://localhost:8000/docs
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
 
 from .config import settings
 from .database import Base, engine
 from .routers import analytics, detection, imports, meta, reports, structures, forecast
 from .seed.seed import ensure_seeded
 
-# Create tables and auto-seed an empty DB so the app is demo-ready on first run.
+# ── 1. Create tables that don’t exist yet ────────────────────────────────────
 Base.metadata.create_all(bind=engine)
+
+# ── 2. Auto-migrate: add missing columns to existing tables ──────────────────
+#    SQLite ALTER TABLE only supports ADD COLUMN, so we just add what’s missing.
+_MIGRATIONS = [
+    # (table, column, column_def)
+    ("inspections",          "inspection_type",    "VARCHAR(40) NOT NULL DEFAULT 'Плановый'"),
+    ("inspections",          "condition_found",    "VARCHAR(40)"),
+    ("inspections",          "wear_found",         "FLOAT"),
+    ("inspections",          "notes",              "TEXT"),
+    ("repairs",              "repair_type",        "VARCHAR(40) NOT NULL DEFAULT 'Текущий ремонт'"),
+    ("repairs",              "notes",              "TEXT"),
+    ("hydraulic_structures", "risk_score",         "FLOAT"),
+    ("hydraulic_structures", "next_inspection",    "DATE"),
+    ("hydraulic_structures", "water_source",       "VARCHAR(120)"),
+    ("hydraulic_structures", "locality",           "VARCHAR(160)"),
+    ("hydraulic_structures", "significance",       "VARCHAR(40) DEFAULT 'local'"),
+    ("hydraulic_structures", "length_earthen_km",  "FLOAT"),
+    ("hydraulic_structures", "length_lined_km",    "FLOAT"),
+    ("hydraulic_structures", "capacity",           "FLOAT"),
+    ("hydraulic_structures", "area_ha",            "FLOAT"),
+    ("hydraulic_structures", "efficiency_design",  "FLOAT"),
+    ("hydraulic_structures", "efficiency_actual",  "FLOAT"),
+    ("hydraulic_structures", "wear_percent",       "FLOAT"),
+    ("hydraulic_structures", "structures_count",   "INTEGER"),
+    ("hydraulic_structures", "cadastral_number",   "VARCHAR(80)"),
+    ("hydraulic_structures", "state_act",          "VARCHAR(80)"),
+    ("hydraulic_structures", "source",             "VARCHAR(40) DEFAULT 'dataset'"),
+    ("hydraulic_structures", "verification_status","VARCHAR(40) DEFAULT 'verified'"),
+    ("hydraulic_structures", "type_code",          "VARCHAR(40) DEFAULT 'other'"),
+]
+
+_inspector = inspect(engine)
+_existing_tables = _inspector.get_table_names()
+
+with engine.connect() as _conn:
+    for _table, _column, _col_def in _MIGRATIONS:
+        if _table not in _existing_tables:
+            continue
+        _existing_cols = {c["name"] for c in _inspector.get_columns(_table)}
+        if _column not in _existing_cols:
+            _conn.execute(text(f'ALTER TABLE "{_table}" ADD COLUMN "{_column}" {_col_def}'))
+    _conn.commit()
+
+# ── 3. Seed demo data if empty ───────────────────────────────────────────────
 ensure_seeded()
 
 app = FastAPI(
