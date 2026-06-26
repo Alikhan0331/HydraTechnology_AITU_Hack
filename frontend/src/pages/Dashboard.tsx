@@ -34,7 +34,7 @@ function normalizeSummary(data: any) {
   return { ...data, by_condition, by_type };
 }
 
-const RISK_COLORS: Record<string, string> = { critical: "#dc2626", high: "#ea580c", medium: "#d97706", low: "#16a34a" };
+const RISK_COLORS: Record<string, string> = { critical: "#dc2626", high: "#ea580c", medium: "#d97706", low: "#16a34a", "Критический": "#dc2626", "Высокий": "#ea580c", "Средний": "#d97706", "Низкий": "#16a34a" };
 const RISK_LABELS: Record<string, string> = { critical: "Критический", high: "Высокий", medium: "Средний", low: "Низкий" };
 const TOP_RISK_LIMITS = [5, 10, 20, 50];
 
