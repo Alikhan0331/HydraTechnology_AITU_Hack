@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from .. import crud, models, schemas
 from ..database import get_db
-from ..services import priority, risk_engine, risk_score
+from ..services import priority, risk_score
 
 router = APIRouter(prefix="/api/structures", tags=["structures"])
 
@@ -85,24 +85,28 @@ def delete_structure(structure_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Structure not found")
 
 
-# --- Risk (TZ tasks 5 & 6) ----------------------------------------------------
+# --- Risk (single source = expert Risk Score model) ---------------------------
+def _risk_payload(ev: dict, obj) -> schemas.RiskAssessmentRead:
+    return schemas.RiskAssessmentRead(
+        risk_level=risk_score.LEVEL_CODE[ev["risk_level"]],
+        score=float(ev["risk_score"]),
+        factors=risk_score.card_factors(ev),
+        recommendation="; ".join(ev["risk_reasons"]),
+        next_inspection=obj.next_inspection,
+    )
+
+
 @router.get("/{structure_id}/risk", response_model=schemas.RiskAssessmentRead)
 def get_risk(structure_id: int, db: Session = Depends(get_db)):
     obj = crud.get_structure(db, structure_id)
     if not obj:
         raise HTTPException(404, "Structure not found")
-    risk = risk_engine.compute_risk(
-        year_built=obj.year_built, condition=obj.condition,
-        wear_fraction=(obj.wear_percent / 100) if obj.wear_percent else None,
-        eff_design=obj.efficiency_design,
-        eff_actual=obj.efficiency_actual, last_inspection=obj.last_inspection,
-        significance=obj.significance, type_code=obj.type_code,
+    ev = risk_score.compute_risk_score(
+        condition=obj.condition, year_built=obj.year_built,
+        last_inspection=obj.last_inspection,
+        accident_count=_accident_count(db, structure_id),
     )
-    return schemas.RiskAssessmentRead(
-        risk_level=risk["risk_level"], score=risk["score"],
-        factors=risk["factors"], recommendation=risk["recommendation"],
-        next_inspection=obj.next_inspection,
-    )
+    return _risk_payload(ev, obj)
 
 
 @router.post("/{structure_id}/risk", response_model=schemas.RiskAssessmentRead)
@@ -110,12 +114,8 @@ def recompute_risk(structure_id: int, db: Session = Depends(get_db)):
     obj = crud.get_structure(db, structure_id)
     if not obj:
         raise HTTPException(404, "Structure not found")
-    risk = crud.recompute_risk(db, obj)
-    return schemas.RiskAssessmentRead(
-        risk_level=risk["risk_level"], score=risk["score"],
-        factors=risk["factors"], recommendation=risk["recommendation"],
-        next_inspection=obj.next_inspection,
-    )
+    ev = crud.recompute_risk(db, obj)
+    return _risk_payload(ev, obj)
 
 
 # --- Inspection Priority + Risk Score (deterministic expert models) -----------

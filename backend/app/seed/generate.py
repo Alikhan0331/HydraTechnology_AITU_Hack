@@ -14,7 +14,7 @@ from pathlib import Path
 
 from ..enums import DISTRICT_NAMES, STRUCTURE_TYPES
 from ..services import classification, geo
-from ..services.risk_engine import compute_risk, next_inspection_date
+from ..services import risk_score as rs
 
 DATA_FILE = Path(__file__).parent / "data" / "canals_raw.json"
 
@@ -61,19 +61,17 @@ def _assemble(*, idx, name, type_code, district, year_built, length_km,
     )
     last_insp = _inspection_date(condition, rng)
     significance = _significance(length_km, type_code)
-    risk = compute_risk(
-        year_built=year_built, condition=condition, wear_fraction=wear_fraction,
-        eff_design=eff_design, eff_actual=eff_actual, last_inspection=last_insp,
-        significance=significance, type_code=type_code,
-    )
-    nxt = next_inspection_date(last_insp, risk["interval_days"], type_code)
+    # single source of truth for risk = the expert Risk Score model (accidents
+    # added later in the seed once history exists)
+    sf = rs.storage_fields(condition=condition, year_built=year_built,
+                           last_inspection=last_insp, accident_count=0, type_code=type_code)
 
     return {
         "name": name, "type": ru_name, "type_code": type_code, "district": district,
         "latitude": lat, "longitude": lng,
-        "condition": condition, "risk_level": risk["risk_level"],
-        "risk_score": risk["score"], "length_km": length_km,
-        "year_built": year_built, "last_inspection": last_insp, "next_inspection": nxt,
+        "condition": condition, "risk_level": sf["risk_level"],
+        "risk_score": sf["risk_score"], "length_km": length_km,
+        "year_built": year_built, "last_inspection": last_insp, "next_inspection": sf["next_inspection"],
         "description": description, "water_source": water_source, "locality": locality,
         "significance": significance,
         "length_earthen_km": length_earthen, "length_lined_km": length_lined,
@@ -83,7 +81,7 @@ def _assemble(*, idx, name, type_code, district, year_built, length_km,
         "structures_count": structures_count,
         "cadastral_number": cadastral, "state_act": state_act,
         "source": source, "verification_status": "verified",
-        "_recommendation": risk["recommendation"],
+        "_recommendation": "; ".join(sf["evaluation"]["risk_reasons"]),
     }
 
 

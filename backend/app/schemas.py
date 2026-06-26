@@ -213,7 +213,7 @@ class RiskAssessmentRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     risk_level: str
     score: float
-    factors: dict | None = None
+    factors: list | dict | None = None
     recommendation: str | None = None
     computed_at: datetime | None = None
     next_inspection: date | None = None

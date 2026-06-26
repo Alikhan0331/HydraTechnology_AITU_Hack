@@ -20,6 +20,7 @@ from ..models import (
     RiskAssessment,
     StructureType,
 )
+from ..services import risk_score as rs
 from .generate import build_all
 
 # Inspection note templates per condition (shown on the object card).
@@ -92,6 +93,8 @@ def _seed_structures(db):
             factors={"seeded": True},
         ))
 
+        accidents = 0
+
         # --- inspection history (2–4 records, varied per object) ---
         rng = random.Random(f"insp:{obj.id}")
         last = obj.last_inspection
@@ -100,6 +103,8 @@ def _seed_structures(db):
         for k in range(rng.randint(2, 4)):
             # most recent reflects current condition; first one is "Плановый"
             itype = insp_types[0] if k == 0 else rng.choice(insp_types)
+            if itype == "Аварийный":
+                accidents += 1
             db.add(Inspection(
                 structure_id=obj.id, date=d, inspection_type=itype,
                 inspector=rng.choice(["Отдел эксплуатации", "Жамбылводхоз",
@@ -117,11 +122,22 @@ def _seed_structures(db):
         rd = date.today() - timedelta(days=rrng.randint(200, 800))
         for _ in range(rrng.randint(lo, hi)):
             rtype = rrng.choice(rtypes)
+            if rtype == "Аварийный ремонт":
+                accidents += 1
             db.add(Repair(
                 structure_id=obj.id, repair_date=rd, repair_type=rtype,
                 notes=rrng.choice(_REPAIR_NOTES[rtype]),
             ))
             rd = rd - timedelta(days=rrng.randint(400, 1500))
+
+        # recompute stored risk now that accident history exists → stored == live
+        if accidents:
+            sf = rs.storage_fields(condition=obj.condition, year_built=obj.year_built,
+                                   last_inspection=obj.last_inspection,
+                                   accident_count=accidents, type_code=obj.type_code)
+            obj.risk_score = sf["risk_score"]
+            obj.risk_level = sf["risk_level"]
+            obj.next_inspection = sf["next_inspection"]
     db.commit()
     return len(rows)
 

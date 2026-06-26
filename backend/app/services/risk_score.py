@@ -8,7 +8,14 @@ set is declared in FACTORS, so adding a future risk factor is a one-line change.
 """
 from datetime import date
 
+from .risk_engine import next_inspection_date  # seasonal scheduling helper (reused)
+
 CURRENT_YEAR = 2026
+
+# RU level → frontend code (catalog filters/colors keep working on codes)
+LEVEL_CODE = {"Низкий": "low", "Средний": "medium", "Высокий": "high", "Критический": "critical"}
+# inspection interval (days) by risk level → stored next_inspection
+INTERVAL_BY_LEVEL = {"Низкий": 365, "Средний": 180, "Высокий": 90, "Критический": 30}
 
 CONDITION_SCORE = {"good": 0, "monitoring": 25, "requires_repair": 50, "emergency": 80}
 CONDITION_REASON = {
@@ -102,3 +109,39 @@ def compute_risk_score(*, condition: str | None, year_built: int | None,
         "color": LEVEL_COLOR[level],
         "breakdown": breakdown,
     }
+
+
+# Max contribution per factor — used for the card "factor weight" bars.
+_FACTOR_MAX = {"condition": 80, "age": 30, "inspection": 30, "accident": 20}
+_FACTOR_LABEL = {"condition": "Состояние", "age": "Возраст",
+                 "inspection": "Давность осмотра", "accident": "История аварий"}
+
+
+def storage_fields(*, condition, year_built, last_inspection, accident_count, type_code) -> dict:
+    """Values to persist on a structure so the whole app shares one risk model:
+    risk_score (float), risk_level (frontend code) and the seasonal next_inspection."""
+    r = compute_risk_score(condition=condition, year_built=year_built,
+                           last_inspection=last_inspection, accident_count=accident_count)
+    interval = INTERVAL_BY_LEVEL[r["risk_level"]]
+    return {
+        "risk_score": float(r["risk_score"]),
+        "risk_level": LEVEL_CODE[r["risk_level"]],
+        "next_inspection": next_inspection_date(last_inspection, interval, type_code),
+        "evaluation": r,
+    }
+
+
+def card_factors(evaluation: dict) -> list[dict]:
+    """Convert the breakdown into the {name,value,weight,score} array the object
+    card's risk-factor bars expect (keeps the existing UI working, new data)."""
+    bd = evaluation["breakdown"]
+    out = []
+    for key in ("condition", "age", "inspection", "accident"):
+        contrib = bd.get(key, 0)
+        out.append({
+            "name": _FACTOR_LABEL[key],
+            "value": f"{contrib} из {_FACTOR_MAX[key]} баллов",
+            "weight": _FACTOR_MAX[key],
+            "score": round(contrib / _FACTOR_MAX[key] * 100) if _FACTOR_MAX[key] else 0,
+        })
+    return out

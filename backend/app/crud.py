@@ -4,7 +4,17 @@ from sqlalchemy.orm import Session
 
 from . import models, schemas
 from .enums import STRUCTURE_TYPES, TYPE_NAME_TO_CODE
-from .services import classification, risk_engine
+from .services import classification, risk_score
+
+
+def _accidents(db: Session, structure_id: int) -> int:
+    """Accidents = emergency inspections + emergency repairs (drives Risk Score)."""
+    return (db.scalar(select(func.count()).select_from(models.Inspection).where(
+        models.Inspection.structure_id == structure_id,
+        models.Inspection.inspection_type == "Аварийный")) or 0) + (
+        db.scalar(select(func.count()).select_from(models.Repair).where(
+        models.Repair.structure_id == structure_id,
+        models.Repair.repair_type == "Аварийный ремонт")) or 0)
 
 
 # --------------------------------------------------------------------------- #
@@ -86,25 +96,19 @@ def create_structure(db: Session, data: schemas.StructureCreate,
     condition = data.condition or classification.derive_condition(
         None, data.year_built, wear_fraction, None, None
     )
-    risk = risk_engine.compute_risk(
-        year_built=data.year_built,
-        condition=condition,
-        wear_fraction=wear_fraction,
-        last_inspection=data.last_inspection,
-        significance=data.significance,
-        type_code=code,
+    # single risk model (expert Risk Score); new object has no accident history yet
+    sf = risk_score.storage_fields(
+        condition=condition, year_built=data.year_built,
+        last_inspection=data.last_inspection, accident_count=0, type_code=code,
     )
-    risk_level = data.risk_level or risk["risk_level"]
-    nxt = risk_engine.next_inspection_date(
-        data.last_inspection, risk["interval_days"], code
-    )
+    risk_level = data.risk_level or sf["risk_level"]
 
     obj = models.HydraulicStructure(
         name=data.name, type=ru_name, type_code=code, district=data.district,
         latitude=data.latitude, longitude=data.longitude,
-        condition=condition, risk_level=risk_level, risk_score=risk["score"],
+        condition=condition, risk_level=risk_level, risk_score=sf["risk_score"],
         length_km=data.length_km, year_built=data.year_built,
-        last_inspection=data.last_inspection, next_inspection=nxt,
+        last_inspection=data.last_inspection, next_inspection=sf["next_inspection"],
         description=data.description, water_source=data.water_source,
         significance=data.significance or "local",
         capacity=data.capacity, wear_percent=data.wear_percent,
@@ -113,7 +117,7 @@ def create_structure(db: Session, data: schemas.StructureCreate,
     db.add(obj)
     db.commit()
     db.refresh(obj)
-    _log_risk(db, obj, risk)
+    _log_risk(db, obj, sf["evaluation"])
     return obj
 
 
@@ -128,23 +132,18 @@ def update_structure(db: Session, structure_id: int, data: schemas.StructureUpda
         setattr(obj, key, value)
 
     # Recompute derived risk whenever a risk-relevant field changed.
-    if {"year_built", "condition", "wear_percent", "last_inspection",
-        "significance"} & set(payload):
-        risk = risk_engine.compute_risk(
-            year_built=obj.year_built, condition=obj.condition,
-            wear_fraction=(obj.wear_percent / 100) if obj.wear_percent else None,
-            eff_design=obj.efficiency_design,
-            eff_actual=obj.efficiency_actual, last_inspection=obj.last_inspection,
-            significance=obj.significance, type_code=obj.type_code,
+    if {"year_built", "condition", "last_inspection"} & set(payload):
+        sf = risk_score.storage_fields(
+            condition=obj.condition, year_built=obj.year_built,
+            last_inspection=obj.last_inspection,
+            accident_count=_accidents(db, obj.id), type_code=obj.type_code,
         )
         if "risk_level" not in payload:
-            obj.risk_level = risk["risk_level"]
-        obj.risk_score = risk["score"]
-        obj.next_inspection = risk_engine.next_inspection_date(
-            obj.last_inspection, risk["interval_days"], obj.type_code
-        )
+            obj.risk_level = sf["risk_level"]
+        obj.risk_score = sf["risk_score"]
+        obj.next_inspection = sf["next_inspection"]
         db.commit()
-        _log_risk(db, obj, risk)
+        _log_risk(db, obj, sf["evaluation"])
     else:
         db.commit()
     db.refresh(obj)
@@ -161,26 +160,23 @@ def delete_structure(db: Session, structure_id: int) -> bool:
 
 
 def recompute_risk(db: Session, obj: models.HydraulicStructure):
-    risk = risk_engine.compute_risk(
-        year_built=obj.year_built, condition=obj.condition,
-        wear_fraction=(obj.wear_percent / 100) if obj.wear_percent else None,
-        eff_design=obj.efficiency_design,
-        eff_actual=obj.efficiency_actual, last_inspection=obj.last_inspection,
-        significance=obj.significance, type_code=obj.type_code,
+    sf = risk_score.storage_fields(
+        condition=obj.condition, year_built=obj.year_built,
+        last_inspection=obj.last_inspection,
+        accident_count=_accidents(db, obj.id), type_code=obj.type_code,
     )
-    obj.risk_level = risk["risk_level"]
-    obj.risk_score = risk["score"]
-    obj.next_inspection = risk_engine.next_inspection_date(
-        obj.last_inspection, risk["interval_days"], obj.type_code
-    )
+    obj.risk_level = sf["risk_level"]
+    obj.risk_score = sf["risk_score"]
+    obj.next_inspection = sf["next_inspection"]
     db.commit()
-    _log_risk(db, obj, risk)
-    return risk
+    _log_risk(db, obj, sf["evaluation"])
+    return sf["evaluation"]
 
 
-def _log_risk(db: Session, obj: models.HydraulicStructure, risk: dict):
+def _log_risk(db: Session, obj: models.HydraulicStructure, evaluation: dict):
     db.add(models.RiskAssessment(
-        structure_id=obj.id, risk_level=risk["risk_level"], score=risk["score"],
-        factors=risk["factors"], recommendation=risk["recommendation"],
+        structure_id=obj.id, risk_level=evaluation["risk_level"],
+        score=evaluation["risk_score"], factors=evaluation["breakdown"],
+        recommendation="; ".join(evaluation["risk_reasons"]),
     ))
     db.commit()
