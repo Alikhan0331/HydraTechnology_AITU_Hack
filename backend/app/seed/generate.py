@@ -107,6 +107,14 @@ def generate_canals() -> list[dict]:
         cond = classification.derive_condition(
             r.get("tech_condition"), r.get("year_built"), r.get("wear_raw"),
             r.get("eff_design"), r.get("eff_actual"))
+        # износ: из датасета если есть, иначе синтетический из возраста + состояния
+        wear = r.get("wear_raw")
+        if wear is None:
+            age = 2026 - (r.get("year_built") or 1980)
+            base = 0.2 + min(0.5, age / 120)
+            if cond in ("requires_repair", "emergency"):
+                base += 0.2
+            wear = round(max(0.1, min(0.95, base + random.Random(f"w{i}").uniform(-0.08, 0.08))), 2)
         district = _district_for(cond, random.Random(f"distc{i}"))
         river = geo.river_for_district(district)   # re-anchor placeholder "р. Иртыш"
         area = sum(v for v in (r.get("area_regular_ha"), r.get("area_liman_ha"),
@@ -117,7 +125,7 @@ def generate_canals() -> list[dict]:
             idx=f"c{i}", name=f"Канал №{no}",   # matches importer naming → re-import dedups
             type_code="canal", district=district, year_built=r.get("year_built"),
             length_km=length, tech_condition=r.get("tech_condition"),
-            wear_fraction=r.get("wear_raw"), eff_design=r.get("eff_design"),
+            wear_fraction=wear, eff_design=r.get("eff_design"),
             eff_actual=r.get("eff_actual"), water_source=river,
             locality=r.get("rural_district"), capacity=r.get("capacity"),
             area_ha=area, length_earthen=r.get("length_earthen_km"),

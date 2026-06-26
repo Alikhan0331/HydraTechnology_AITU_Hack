@@ -3,13 +3,15 @@
 All endpoints accept the same filter params as GET /api/structures, so the
 export matches the current filtered view.
 """
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .. import crud
+from .. import crud, models
 from ..database import get_db
 from ..enums import CONDITIONS, ConditionCode
 from ..reports import builder
+from ..services import risk_score
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
@@ -86,3 +88,26 @@ def export_pdf(
     rows = _filtered(db, "risk", **p)  # problem objects first
     content = builder.build_pdf(rows, summary=_summary_from(rows), title=title)
     return _attach(content, "application/pdf", "report.pdf")
+
+
+@router.get("/structure/{structure_id}.pdf")
+def export_object_passport(structure_id: int, db: Session = Depends(get_db)):
+    """PDF passport for ONE object (object card download)."""
+    obj = crud.get_structure(db, structure_id)
+    if not obj:
+        raise HTTPException(404, "Structure not found")
+    accidents = (db.scalar(select(func.count()).select_from(models.Inspection).where(
+        models.Inspection.structure_id == structure_id,
+        models.Inspection.inspection_type == "Аварийный")) or 0) + (
+        db.scalar(select(func.count()).select_from(models.Repair).where(
+        models.Repair.structure_id == structure_id,
+        models.Repair.repair_type == "Аварийный ремонт")) or 0)
+    risk_eval = risk_score.compute_risk_score(
+        condition=obj.condition, year_built=obj.year_built,
+        last_inspection=obj.last_inspection, accident_count=accidents)
+    inspections = list(db.scalars(select(models.Inspection).where(
+        models.Inspection.structure_id == structure_id).order_by(models.Inspection.date.desc())))
+    repairs = list(db.scalars(select(models.Repair).where(
+        models.Repair.structure_id == structure_id).order_by(models.Repair.repair_date.desc())))
+    content = builder.build_object_passport(obj, risk_eval, inspections, repairs)
+    return _attach(content, "application/pdf", f"passport_{structure_id}.pdf")

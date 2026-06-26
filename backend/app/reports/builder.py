@@ -177,3 +177,70 @@ def build_pdf(structures, summary: dict | None = None, title: str | None = None)
                  new_x="LMARGIN", new_y="NEXT")
 
     return bytes(pdf.output())
+
+
+def build_object_passport(obj, risk_eval: dict, inspections, repairs) -> bytes:
+    """One-page PDF passport for a single object (object card download)."""
+    from fpdf import FPDF
+
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    pdf.set_auto_page_break(auto=True, margin=14)
+    pdf.add_font("DejaVu", "", str(FONT_PATH))
+    pdf.add_font("DejaVu", "B", str(FONT_PATH))
+    pdf.add_page()
+
+    pdf.set_font("DejaVu", "B", 16)
+    pdf.cell(0, 9, "Паспорт гидротехнического сооружения", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("DejaVu", "B", 13)
+    pdf.set_text_color(29, 78, 216)
+    pdf.cell(0, 8, str(obj.name), new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(2)
+
+    def row(label, value):
+        pdf.set_font("DejaVu", "B", 10)
+        pdf.cell(55, 7, label)
+        pdf.set_font("DejaVu", "", 10)
+        pdf.cell(0, 7, str(value), new_x="LMARGIN", new_y="NEXT")
+
+    row("Тип", obj.type)
+    row("Район", obj.district)
+    row("Состояние", COND_LABEL.get(obj.condition, obj.condition))
+    row("Risk Score", f"{risk_eval['risk_score']} / 100 — {risk_eval['risk_level']}")
+    row("Год ввода", obj.year_built or "—")
+    row("Длина, км", obj.length_km if obj.length_km is not None else "—")
+    row("Износ, %", obj.wear_percent if obj.wear_percent is not None else "—")
+    row("Водоисточник", obj.water_source or "—")
+    row("Координаты", f"{obj.latitude}, {obj.longitude}")
+    row("Посл. осмотр", obj.last_inspection or "—")
+    row("След. осмотр", obj.next_inspection or "—")
+    pdf.ln(2)
+
+    pdf.set_font("DejaVu", "B", 11)
+    pdf.cell(0, 7, "Причины риска", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("DejaVu", "", 9)
+    for reason in risk_eval["risk_reasons"]:
+        pdf.cell(0, 6, f"•  {reason}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+
+    for title, items, fmt in (
+        ("История осмотров", inspections,
+         lambda x: f"{x.date} — {x.inspection_type}: {(x.notes or '')[:68]}"),
+        ("История ремонтов", repairs,
+         lambda x: f"{x.repair_date} — {x.repair_type}: {(x.notes or '')[:68]}"),
+    ):
+        pdf.set_font("DejaVu", "B", 11)
+        pdf.cell(0, 7, title, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("DejaVu", "", 9)
+        if not items:
+            pdf.cell(0, 6, "—", new_x="LMARGIN", new_y="NEXT")
+        for it in items[:12]:
+            pdf.cell(0, 6, fmt(it), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(1)
+
+    pdf.ln(2)
+    pdf.set_font("DejaVu", "", 8)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(0, 5, f"Сформировано {date.today().isoformat()} · HydraTechnology",
+             new_x="LMARGIN", new_y="NEXT")
+    return bytes(pdf.output())

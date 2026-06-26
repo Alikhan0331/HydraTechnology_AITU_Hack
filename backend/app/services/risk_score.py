@@ -138,10 +138,11 @@ def card_factors(evaluation: dict) -> list[dict]:
     out = []
     for key in ("condition", "age", "inspection", "accident"):
         contrib = bd.get(key, 0)
+        fill = round(contrib / _FACTOR_MAX[key] * 100) if _FACTOR_MAX[key] else 0
         out.append({
             "name": _FACTOR_LABEL[key],
             "value": f"{contrib} из {_FACTOR_MAX[key]} баллов",
-            "weight": _FACTOR_MAX[key],
-            "score": round(contrib / _FACTOR_MAX[key] * 100) if _FACTOR_MAX[key] else 0,
+            "weight": fill,   # % how close this factor is to its max → matches the bar
+            "score": fill,
         })
     return out
