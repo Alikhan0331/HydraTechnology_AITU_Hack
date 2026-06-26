@@ -157,12 +157,17 @@ def get_forecast(structure_id: int, db: Session = Depends(get_db)):
         prob = score_24m / 500
     prob = round(max(0.0, min(prob, 1.0)), 2)
 
-    # --- Residual service life -------------------------------------------
+    # --- Residual service life --------------------------------------------
+    # Years until the risk reaches end-of-life (~100) at the current degradation
+    # rate. A serviceable object keeps a real reserve even if it is old; only a
+    # critical object drops to ~0. Bounded to the type's typical lifespan.
     type_code = (obj.type_code or "other").lower()
-    lifespan = TYPICAL_LIFESPAN.get(type_code, 50)
-    # Wear accelerates remaining life consumption
-    effective_age = age + wear * lifespan * 0.25
-    residual = round(max(0.0, lifespan - effective_age), 1)
+    max_life = TYPICAL_LIFESPAN.get(type_code, 50) * 0.75   # realistic upper bound
+    if base_score >= 100:
+        residual = 0.0
+    else:
+        residual = (100.0 - base_score) / degradation_rate
+    residual = round(max(0.0, min(residual, max_life)), 1)
 
     recommendation = _recommendation(score_24m, residual, obj.condition or "monitoring")
 

@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 
 from .. import models
 from ..enums import STRUCTURE_TYPES
-from .geo import haversine_m
+from .geo import haversine_m, in_zhambyl
 
 OVERPASS_MIRRORS = [
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
@@ -183,6 +183,8 @@ def search(db: Session, lat: float, lon: float, radius_km: float) -> dict:
 
     matched = new = 0
     for o in osm:
+        if not in_zhambyl(o["lat"], o["lon"]):
+            continue   # keep detection inside Zhambyl (no cross-border objects)
         near, nd = _nearest_db(db_objs, o["lat"], o["lon"])
         is_match = near is not None and (
             nd <= MATCH_DIST_M
