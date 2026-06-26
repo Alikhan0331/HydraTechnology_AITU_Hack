@@ -29,8 +29,8 @@ function FlyTo({ lat, lon, zoom = 14 }: { lat: number; lon: number; zoom?: numbe
   return null;
 }
 
-const sourceLabel: Record<string, string> = { osm: "OpenStreetMap", satellite_ndwi: "Спутник (NDWI)", dem: "DEM рельеф" };
-const sourceColor: Record<string, string> = { osm: "#1d4ed8", satellite_ndwi: "#7c3aed", dem: "#0891b2" };
+const sourceLabel: Record<string, string> = { osm: "OpenStreetMap", catalog: "В каталоге" };
+const sourceColor: Record<string, string> = { osm: "#1d4ed8", catalog: "#16a34a" };
 const RISK_COLORS: Record<string, string> = { low: "#16a34a", medium: "#d97706", high: "#ea580c", critical: "#dc2626" };
 const RISK_LABELS: Record<string, string> = { low: "Низкий", medium: "Средний", high: "Высокий", critical: "Критический" };
 
@@ -201,7 +201,7 @@ export default function Detection() {
 
       <div style={{ marginBottom: "24px" }}>
         <h1 style={{ fontSize: "24px", color: "var(--gray-900)", marginBottom: "4px" }}>🔍 Алгоритм обнаружения</h1>
-        <p style={{ color: "var(--gray-500)", fontSize: "13px" }}>Поиск гидросооружений по координатам — OSM, спутниковые снимки, анализ рельефа</p>
+        <p style={{ color: "var(--gray-500)", fontSize: "13px" }}>Поиск гидросооружений по координатам в OpenStreetMap и сверка с базой (дедупликация)</p>
       </div>
 
       {fromObject && (
