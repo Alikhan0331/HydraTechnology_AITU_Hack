@@ -87,9 +87,12 @@ def _project_score(base: float, rate: float, months: int) -> float:
     return round(min(projected, 100), 1)
 
 def _recommendation(score_24m: float, residual: float, condition: str) -> str:
-    if condition == "emergency" or score_24m >= 90:
+    # "Аварийный ремонт" is reserved for objects whose physical condition is
+    # actually emergency — otherwise the banner contradicts a "Требует ремонта"
+    # object (a high projected risk score is not the same as an emergency state).
+    if condition == "emergency":
         return "Аварийный ремонт — немедленное вмешательство обязательно"
-    if score_24m >= 75 or residual < 3:
+    if condition == "requires_repair" or score_24m >= 75 or residual < 3:
         return "Плановый капитальный ремонт в течение 12 месяцев"
     if score_24m >= 55:
         return "Расширенный мониторинг; текущий ремонт в течение 24 месяцев"
