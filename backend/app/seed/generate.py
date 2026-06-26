@@ -69,7 +69,7 @@ def _assemble(*, idx, name, type_code, district, year_built, length_km,
               description):
     ru_name = STRUCTURE_TYPES[type_code][0]
     rng = random.Random(f"{type_code}:{idx}")
-    lat, lng = geo.coords_for_district(district, idx)
+    lat, lng = geo.cluster_coords_for_district(district, idx)
 
     condition = classification.derive_condition(
         tech_condition, year_built, wear_fraction, eff_design, eff_actual
@@ -217,6 +217,10 @@ def generate_osm_real() -> list[dict]:
     for i, o in enumerate(data):
         name = o.get("name")
         if not name or name in seen:
+            continue
+        # keep only OSM objects whose real coordinates are inside Zhambyl region
+        # (drops cross-border ones like Кировское вдхр. in Kyrgyzstan)
+        if not geo.in_zhambyl(o["lat"], o["lon"]):
             continue
         seen.add(name)
         rng = random.Random(f"osm:{o['osm_id']}")

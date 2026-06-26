@@ -84,6 +84,59 @@ def _bbox_area(ring: list) -> float:
     return (max(xs) - min(xs)) * (max(ys) - min(ys))
 
 
+def in_zhambyl(lat: float, lng: float) -> bool:
+    """True if the point falls inside ANY Zhambyl-region district polygon."""
+    for polys in _load_polys().values():
+        for poly in polys:
+            if _pt_in_poly(lng, lat, poly):
+                return True
+    return False
+
+
+_CLUSTERS: dict[str, list[tuple[float, float]]] = {}   # district -> [(lng, lat), ...]
+
+
+def _district_clusters(district: str, k: int = 3) -> list[tuple[float, float]]:
+    """A few deterministic cluster centres inside the district (irrigation hubs)."""
+    if district not in _CLUSTERS:
+        centers: list[tuple[float, float]] = []
+        polys = _load_polys().get(district)
+        if polys:
+            poly = max(polys, key=lambda p: _bbox_area(p[0]))
+            xs = [pt[0] for pt in poly[0]]
+            ys = [pt[1] for pt in poly[0]]
+            xmin, xmax, ymin, ymax = min(xs), max(xs), min(ys), max(ys)
+            rng = random.Random(f"clusters:{district}")
+            tries = 0
+            while len(centers) < k and tries < 400:
+                tries += 1
+                x, y = rng.uniform(xmin, xmax), rng.uniform(ymin, ymax)
+                if _pt_in_poly(x, y, poly):
+                    centers.append((x, y))
+        _CLUSTERS[district] = centers
+    return _CLUSTERS[district]
+
+
+def cluster_coords_for_district(district: str, seed: int) -> tuple[float, float]:
+    """Mix of clustered points (~78% around a few hubs → 'очаги') and scattered
+    individual points (~22% uniform in the district). Always inside the boundary."""
+    polys = _load_polys().get(district)
+    if not polys:
+        return coords_for_district(district, seed)
+    poly = max(polys, key=lambda p: _bbox_area(p[0]))
+    rng = random.Random(f"clu:{district}:{seed}")
+    centers = _district_clusters(district)
+    if centers and rng.random() < 0.78:
+        cx, cy = rng.choice(centers)
+        for _ in range(60):
+            x = cx + rng.gauss(0, 0.04)
+            y = cy + rng.gauss(0, 0.032)
+            if _pt_in_poly(x, y, poly):
+                return round(y, 5), round(x, 5)
+        return round(cy, 5), round(cx, 5)
+    return coords_for_district(district, seed)   # scattered (point-in-polygon)
+
+
 def river_for_district(district: str) -> str:
     return DISTRICTS.get(district, (0, 0, "р. Талас"))[2]
 
