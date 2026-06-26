@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..database import get_db
 from ..enums import CONDITIONS, ConditionCode, RISK_LABELS
-from ..services import priority, risk_score
+from ..services import district_rating, priority, risk_score
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
@@ -193,6 +193,51 @@ def accident_counts(db: Session) -> dict[int, int]:
     ).all():
         acc[sid] = acc.get(sid, 0) + int(n)
     return acc
+
+
+@router.get("/district-rating", response_model=list[schemas.DistrictRatingItem])
+def district_rating_endpoint(db: Session = Depends(get_db)):
+    """District Health Index (0-100) per district, sorted by index desc."""
+    acc = accident_counts(db)
+    agg: dict[str, dict] = {}
+    for s in db.scalars(select(S)):
+        d = agg.setdefault(s.district, {
+            "count": 0, "critical": 0, "repair": 0, "good": 0,
+            "risk_sum": 0.0, "priority_sum": 0.0,
+        })
+        d["count"] += 1
+        if s.condition == "emergency":
+            d["critical"] += 1
+        elif s.condition == "requires_repair":
+            d["repair"] += 1
+        elif s.condition == "good":
+            d["good"] += 1
+        d["risk_sum"] += s.risk_score or 0.0
+        p = priority.compute_priority(
+            condition=s.condition, year_built=s.year_built,
+            last_inspection=s.last_inspection, significance=s.significance,
+            accident_count=acc.get(s.id, 0),
+        )
+        d["priority_sum"] += p["priority_score"]
+
+    items = []
+    for district, d in agg.items():
+        n = d["count"]
+        avg_risk = d["risk_sum"] / n
+        avg_priority = d["priority_sum"] / n
+        h = district_rating.compute_health(
+            objects_count=n, critical=d["critical"], repair=d["repair"],
+            good=d["good"], avg_risk=avg_risk, avg_priority=avg_priority,
+        )
+        items.append(schemas.DistrictRatingItem(
+            district=district, health_index=h["health_index"],
+            status=h["status"], color=h["color"], objects_count=n,
+            critical_objects=d["critical"], repair_required=d["repair"],
+            good_objects=d["good"], average_risk=round(avg_risk),
+            average_priority=round(avg_priority),
+        ))
+    items.sort(key=lambda x: x.health_index, reverse=True)
+    return items
 
 
 @router.get("/priority-ranking", response_model=list[schemas.PriorityItem])

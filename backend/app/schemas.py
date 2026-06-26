@@ -207,6 +207,22 @@ class RiskScoreDetail(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+#  District rating
+# --------------------------------------------------------------------------- #
+class DistrictRatingItem(BaseModel):
+    district: str
+    health_index: int
+    status: str
+    color: str
+    objects_count: int
+    critical_objects: int
+    repair_required: int
+    good_objects: int
+    average_risk: int
+    average_priority: int
+
+
+# --------------------------------------------------------------------------- #
 #  Risk
 # --------------------------------------------------------------------------- #
 class RiskAssessmentRead(BaseModel):

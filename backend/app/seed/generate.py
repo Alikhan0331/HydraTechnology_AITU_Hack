@@ -18,6 +18,21 @@ from ..services import risk_score as rs
 
 DATA_FILE = Path(__file__).parent / "data" / "canals_raw.json"
 
+# Geographic clustering: real regions differ by district, so assign objects to
+# districts by condition severity (healthier objects → "healthier" districts) with
+# noise. This only changes WHERE an (anonymized) object sits, not its own data —
+# it produces a realistic District Health gradient instead of a uniform region.
+_SEV = {"good": 0, "monitoring": 1, "requires_repair": 2, "emergency": 3}
+
+
+def _district_for(condition: str, rng: random.Random) -> str:
+    n = len(DISTRICT_NAMES)
+    # gentle gradient (good→top districts, emergency→bottom) with wide overlap so
+    # districts stay mixed and object counts roughly balanced
+    base = (n - 1) * (0.38 + 0.24 * _SEV.get(condition, 1) / 3)
+    idx = int(round(base + rng.uniform(-4.2, 4.2)))
+    return DISTRICT_NAMES[max(0, min(n - 1, idx))]
+
 RESERVOIRS = [
     "Тасөткельское вдхр.", "Терс-Ащибулакское вдхр.", "Ынталинское вдхр.",
     "Акколь", "Бектобе", "Куюк", "Каракунуз",
@@ -89,7 +104,10 @@ def generate_canals() -> list[dict]:
     records = json.loads(DATA_FILE.read_text(encoding="utf-8"))
     out = []
     for i, r in enumerate(records):
-        district = DISTRICT_NAMES[(r.get("src_no") or i) % len(DISTRICT_NAMES)]
+        cond = classification.derive_condition(
+            r.get("tech_condition"), r.get("year_built"), r.get("wear_raw"),
+            r.get("eff_design"), r.get("eff_actual"))
+        district = _district_for(cond, random.Random(f"distc{i}"))
         river = geo.river_for_district(district)   # re-anchor placeholder "р. Иртыш"
         area = sum(v for v in (r.get("area_regular_ha"), r.get("area_liman_ha"),
                                r.get("area_flooded_ha")) if v) or None
@@ -126,12 +144,13 @@ def generate_other() -> list[dict]:
     for type_code, count in _OTHER_COUNTS.items():
         for n in range(1, count + 1):
             rng = random.Random(f"{type_code}-{n}")
-            district = DISTRICT_NAMES[rng.randrange(len(DISTRICT_NAMES))]
-            river = geo.river_for_district(district)
             year = rng.randint(1955, 2018)
             # synthetic quality so conditions spread realistically
             tech = "unsatisfactory" if rng.random() < 0.28 else "satisfactory"
             wear = round(rng.uniform(0.1, 0.9), 2)
+            cond = classification.derive_condition(tech, year, wear, None, None)
+            district = _district_for(cond, rng)
+            river = geo.river_for_district(district)
 
             if type_code == "gidropost":
                 name = f"Гидропост «{_short_river(river)} — {district}»"

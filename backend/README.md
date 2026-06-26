@@ -72,6 +72,7 @@ docker compose up --build
 | GET | `/api/analytics/dynamics?months=12` | Динамика состояния по месяцам (линейный график) |
 | GET | `/api/analytics/top-risk?limit=10` | **Топ рисковых объектов** (экспертная risk-модель + `risk_reasons`) |
 | GET | `/api/analytics/priority-ranking?limit=50` | **Рейтинг по приоритету осмотра** (экспертная модель) |
+| GET | `/api/analytics/district-rating` | **Рейтинг районов** (District Health Index 0–100 + статус) |
 | GET | `/api/structures/{id}/priority` | Priority Score объекта + breakdown (для карточки) |
 | GET | `/api/structures/{id}/risk-score` | Risk Score объекта + причины риска + цвет (для карточки) |
 
