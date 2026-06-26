@@ -6,6 +6,7 @@ const links = [
   { to: "/analytics", label: "Аналитика", icon: "📈", desc: "Графики и тренды" },
   { to: "/detection", label: "Обнаружение", icon: "🔍", desc: "Поиск по координатам" },
   { to: "/import", label: "Импорт", icon: "📥", desc: "Загрузка данных" },
+  { to: "/district-map", label: "Карта районов", icon: "🗺️", desc: "Рейтинг районов" },
 ];
 
 export default function Sidebar() {

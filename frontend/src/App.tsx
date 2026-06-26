@@ -9,6 +9,7 @@ import Detection from "./pages/Detection";
 import Analytics from "./pages/Analytics";
 import CreateObject from "./pages/CreateObject";
 import ImportData from "./pages/ImportData";
+import DistrictMap from "./pages/DistrictMap";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/create" element={<CreateObject />} />
               <Route path="/import" element={<ImportData />} />
+              <Route path="/district-map" element={<DistrictMap />} />
             </Routes>
           </ErrorBoundary>
         </div>
